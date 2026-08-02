@@ -1,0 +1,86 @@
+.pip {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 0.82rem;
+}
+.soft { color: var(--ink3); font-size: 0.82rem }
+.mini {
+  appearance: none;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink2);
+  border-radius: 999px;
+  padding: 3px 12px;
+}
+.mini:hover { border-color: var(--ink3); color: var(--ink) }
+
+.stage {
+  position: relative;
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 18px;
+}
+
+.tray { display: flex; flex-direction: column; gap: 8px; min-width: 132px }
+.trayItem {
+  appearance: none;
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid var(--line);
+  background: transparent;
+  border-radius: 12px;
+  padding: 7px 10px;
+  font-size: 0.82rem;
+  color: var(--ink2);
+  text-align: left;
+}
+.trayItem:hover { border-color: var(--line2) }
+.trayItem.on { background: var(--clay-s); border-color: #e6c3ae; color: var(--clay-d); font-weight: 600 }
+.swatch { flex: none }
+.count { margin-left: auto; color: var(--ink3); font-variant-numeric: tabular-nums }
+
+.board { touch-action: manipulation; cursor: pointer; max-width: 100%; height: auto }
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(250, 246, 239, 0.9);
+  border-radius: 18px;
+  padding: 16px;
+}
+.panel { max-width: 470px }
+.h2 { font-family: Georgia, serif; font-size: 1.45rem; margin: 0 0 4px }
+.sub { color: var(--ink2); margin: 0 0 16px }
+
+.work { margin-bottom: 14px }
+.line { margin-bottom: 8px }
+.mono { font-family: var(--mono); font-size: 1.05rem }
+.parts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px }
+.part {
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  background: var(--sage-s);
+  border: 1px solid #cfe0ca;
+  border-radius: 7px;
+  padding: 0.15rem 0.5rem;
+  color: var(--sage-d);
+}
+.total { font-family: var(--mono); font-size: 1.1rem; color: var(--ink) }
+
+.foot { color: var(--ink3); font-size: 0.84rem; margin: 0 0 18px }
+.actions { display: flex; gap: 10px; flex-wrap: wrap }

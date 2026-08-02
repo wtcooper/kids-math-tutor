@@ -11,7 +11,7 @@
  */
 
 /** The component that gets dynamically imported. Several games may share one. */
-export type GameImpl = "crossing" | "munchers" | "split" | "enclosure";
+export type GameImpl = "crossing" | "munchers" | "split" | "enclosure" | "tiles";
 
 export interface GameMeta {
   /** Route: /play/<slug>. Stable — it is what her bookmarks point at. */
@@ -29,6 +29,15 @@ export interface GameMeta {
   focus: "fluency" | "understanding";
   /** Lets one implementation serve several games. */
   variant?: string;
+  /**
+   * Level names, when the game's own levels are not the topic's.
+   *
+   * Most games reuse the tutor's level names on purpose, so "Sevens, eights & nines"
+   * reads identically in both places. But a game that has to size its own problems —
+   * Tiles cannot render the tutor's 999 × 9 — must not borrow labels that describe
+   * something else, or the chip says "3 digits × 1 digit" over an 11 × 12 board.
+   */
+  levelNames?: readonly string[];
 }
 
 export const GAMES: readonly GameMeta[] = [
@@ -77,6 +86,27 @@ export const GAMES: readonly GameMeta[] = [
     blurb:
       "Walk a fence around exactly the area asked for. The fence you spend is the perimeter.",
     focus: "understanding",
+    levelNames: [
+      "Small fields",
+      "Watch the fence",
+      "Bigger fields",
+      "Tight fence",
+    ],
+  },
+  {
+    slug: "tiles",
+    impl: "tiles",
+    name: "Tiles",
+    topicId: "mul",
+    blurb:
+      "Cover a rectangle with hundreds, strips and squares. The pile you use is the partial products.",
+    focus: "understanding",
+    levelNames: [
+      "Teens × teens",
+      "Up to 24 × 14",
+      "Up to 24 × 24",
+      "Up to 34 × 24",
+    ],
   },
 ];
 

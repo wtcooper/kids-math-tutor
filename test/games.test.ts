@@ -26,6 +26,13 @@ import {
   ROWS,
   stripPerimeter,
 } from "../app/(app)/play/[slug]/_games/enclosure/EnclosureScene";
+import {
+  canPlace,
+  decompose,
+  genTiles,
+  MAX_TILES,
+  type Placed,
+} from "../app/(app)/play/[slug]/_games/tiles/tiles-model";
 
 const LEVELS = [1, 2, 3, 4];
 const SEEDS = 300;
@@ -174,6 +181,66 @@ describe("Enclosure", () => {
             `L${level}: "${c.label}" — a 1x${c.area} strip still fits, so the cap teaches nothing`,
           ).toBeGreaterThan(c.maxPerimeter);
         }
+      }
+    }
+  });
+});
+
+describe("Tiles", () => {
+  it("the four partial products always add to the product", () => {
+    for (let a = 2; a <= 60; a++) {
+      for (let b = 2; b <= 30; b++) {
+        const d = decompose({ a, b });
+        const sum =
+          d.tensA * d.tensB + d.tensA * d.onesB + d.onesA * d.tensB + d.onesA * d.onesB;
+        expect(sum, `${a}x${b}`).toBe(a * b);
+        expect(d.product).toBe(a * b);
+      }
+    }
+  });
+
+  it("the tile counts cover exactly the rectangle", () => {
+    for (let a = 2; a <= 60; a++) {
+      for (let b = 2; b <= 30; b++) {
+        const d = decompose({ a, b });
+        const area = d.hundreds * 100 + d.tenDowns * 10 + d.tenAcrosses * 10 + d.ones;
+        expect(area, `${a}x${b}`).toBe(a * b);
+        expect(d.fewest).toBe(d.hundreds + d.tenDowns + d.tenAcrosses + d.ones);
+      }
+    }
+  });
+
+  it("refuses a tile that would overlap or hang off the edge", () => {
+    const prob = { a: 12, b: 14 };
+    expect(canPlace([], "hundred", 0, 0, prob)).toBe(true);
+    // Would run past the right edge.
+    expect(canPlace([], "hundred", 5, 0, prob)).toBe(false);
+    // Would run past the bottom.
+    expect(canPlace([], "hundred", 0, 6, prob)).toBe(false);
+    // A 1x10 strip does not fit in an 8-tall board.
+    expect(canPlace([], "tenDown", 0, 0, { a: 12, b: 8 })).toBe(false);
+
+    const first: Placed[] = [{ id: 1, kind: "hundred", c: 0, r: 0 }];
+    expect(canPlace(first, "one", 5, 5, prob)).toBe(false);
+    expect(canPlace(first, "one", 10, 0, prob)).toBe(true);
+    expect(canPlace(first, "one", 0, 10, prob)).toBe(true);
+  });
+
+  it("every generated rectangle is small enough to tile by hand", () => {
+    for (let level = 1; level <= 4; level++) {
+      for (let s = 0; s < 200; s++) {
+        const rand = mulberry32(9000 + s);
+        const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+        const p = genTiles(level, rnd);
+        const d = decompose(p);
+        expect(
+          d.fewest,
+          `L${level}: ${p.a}x${p.b} needs ${d.fewest} tiles`,
+        ).toBeLessThanOrEqual(MAX_TILES);
+        // Every board has a real four-way split, or there is no distributive property
+        // on show — which is the entire point of the game.
+        expect(d.hundreds, `L${level}: ${p.a}x${p.b} has no hundred`).toBeGreaterThan(0);
+        expect(d.ones, `L${level}: ${p.a}x${p.b} has no ones corner`).toBeGreaterThan(0);
       }
     }
   });

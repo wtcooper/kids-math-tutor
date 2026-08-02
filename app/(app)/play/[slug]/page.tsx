@@ -24,10 +24,14 @@ export default async function PlayPage({ params, searchParams }: Props) {
   const topic = game ? BY_ID[game.topicId] : undefined;
   if (!game || !topic) notFound();
 
+  // A game that sizes its own problems names its own levels; the rest reuse the tutor's,
+  // so the same words appear in both places.
+  const levels = game.levelNames ?? topic.levels;
+
   const { level } = await searchParams;
   const parsed = Number(level);
   const initialLevel =
-    Number.isInteger(parsed) && parsed >= 1 && parsed <= topic.levels.length ? parsed : 1;
+    Number.isInteger(parsed) && parsed >= 1 && parsed <= levels.length ? parsed : 1;
 
   return (
     <GameHost
@@ -36,7 +40,7 @@ export default async function PlayPage({ params, searchParams }: Props) {
       name={game.name}
       variant={game.variant ?? ""}
       topicId={game.topicId}
-      levels={topic.levels}
+      levels={levels}
       initialLevel={initialLevel}
       // The puzzle games generate their own boards; the seed keeps the server render and
       // the client hydration agreeing on the first one. Same fix as the tutor.
