@@ -78,6 +78,17 @@ import {
   simulate,
   unitRate,
 } from "../app/(app)/play/[slug]/_games/bakery/bakery-model";
+import {
+  type Blocks,
+  check,
+  floorArea,
+  genCommission,
+  GRID,
+  isSolidBox,
+  key,
+  perimeter,
+  volume,
+} from "../app/(app)/play/[slug]/_games/build/build-model";
 
 const LEVELS = [1, 2, 3, 4];
 const SEEDS = 300;
@@ -653,5 +664,115 @@ describe("The Bakery", () => {
       const byKilo = [...day.offers].sort((a, b) => perKilo(a) - perKilo(b));
       expect(byKilo[0]).toEqual(byPound[0]);
     }
+  });
+});
+
+describe("Build World", () => {
+  const box = (w: number, d: number, h: number): Blocks => {
+    const b: Blocks = {};
+    for (let c = 0; c < w; c++) for (let r = 0; r < d; r++) b[key(c, r)] = h;
+    return b;
+  };
+
+  it("measures a solid box the way a ruler would", () => {
+    for (let w = 1; w <= 5; w++) {
+      for (let d = 1; d <= 5; d++) {
+        for (let h = 1; h <= 3; h++) {
+          const b = box(w, d, h);
+          expect(floorArea(b), `${w}x${d}x${h} area`).toBe(w * d);
+          expect(volume(b), `${w}x${d}x${h} volume`).toBe(w * d * h);
+          expect(perimeter(b), `${w}x${d} perimeter`).toBe(2 * (w + d));
+          expect(isSolidBox(b)).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("counts the perimeter of a shape with a hole, where a path walk would not", () => {
+    // A 3x3 ring: eight blocks around an empty middle.
+    const b: Blocks = {};
+    for (let c = 0; c < 3; c++)
+      for (let r = 0; r < 3; r++) if (!(c === 1 && r === 1)) b[key(c, r)] = 1;
+    expect(floorArea(b)).toBe(8);
+    // 12 around the outside, 4 facing the hole.
+    expect(perimeter(b)).toBe(16);
+    expect(isSolidBox(b)).toBe(false);
+  });
+
+  it("a stack of different heights is not a solid box", () => {
+    const b: Blocks = { [key(0, 0)]: 2, [key(1, 0)]: 1 };
+    expect(isSolidBox(b)).toBe(false);
+    expect(volume(b)).toBe(3);
+  });
+
+  it("every commission can actually be built on the grid", () => {
+    for (let level = 1; level <= 4; level++) {
+      for (let s = 0; s < 200; s++) {
+        const rand = mulberry32(27000 + s);
+        const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+        const c = genCommission(level, rnd);
+
+        if (c.kind === "floor") {
+          // A rectangle with this area must fit, and meet the perimeter cap.
+          const fits: [number, number][] = [];
+          for (let w = 1; w <= GRID; w++) {
+            const h = (c.target ?? 0) / w;
+            if (Number.isInteger(h) && h <= GRID) fits.push([w, h]);
+          }
+          expect(fits.length, `L${level}: ${c.detail} does not fit`).toBeGreaterThan(0);
+          if (c.maxPerimeter !== undefined) {
+            const best = Math.min(...fits.map(([w, h]) => 2 * (w + h)));
+            expect(best, `L${level}: ${c.detail} is impossible`).toBeLessThanOrEqual(
+              c.maxPerimeter,
+            );
+          }
+        }
+
+        if (c.kind === "volume") {
+          // Some w x d x h with all sides on the grid must exist.
+          let ok = false;
+          for (let w = 1; w <= GRID && !ok; w++)
+            for (let d = 1; d <= GRID && !ok; d++)
+              for (let h = 1; h <= 8 && !ok; h++)
+                if (w * d * h === c.target) ok = true;
+          expect(ok, `L${level}: ${c.detail} cannot be built`).toBe(true);
+        }
+
+        if (c.kind === "scale") {
+          expect((c.fromW ?? 0) * (c.scaleBy ?? 1)).toBeLessThanOrEqual(GRID);
+          expect((c.fromD ?? 0) * (c.scaleBy ?? 1)).toBeLessThanOrEqual(GRID);
+        }
+      }
+    }
+  });
+
+  it("accepts a correct build and rejects a near miss", () => {
+    const floorJob = {
+      kind: "floor" as const,
+      title: "t",
+      detail: "d",
+      target: 12,
+      maxPerimeter: 14,
+    };
+    expect(check(floorJob, box(3, 4, 1)).met).toBe(true);
+    // Right area, too much fence.
+    expect(check(floorJob, box(12, 1, 1)).met).toBe(false);
+    // Right area and perimeter, but two storeys.
+    expect(check(floorJob, box(3, 4, 2)).met).toBe(false);
+
+    const volJob = { kind: "volume" as const, title: "t", detail: "d", target: 24 };
+    expect(check(volJob, box(2, 3, 4)).met).toBe(true);
+    expect(check(volJob, box(2, 3, 3)).met).toBe(false);
+
+    const scaleJob = {
+      kind: "scale" as const,
+      title: "t",
+      detail: "d",
+      fromW: 2,
+      fromD: 3,
+      scaleBy: 3,
+    };
+    expect(check(scaleJob, box(6, 9, 1)).met).toBe(true);
+    expect(check(scaleJob, box(6, 8, 1)).met).toBe(false);
   });
 });

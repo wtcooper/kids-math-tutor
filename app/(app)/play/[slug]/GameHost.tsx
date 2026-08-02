@@ -48,6 +48,10 @@ const LOADERS = {
     ssr: false,
     loading: Loading,
   }),
+  build: dynamic(() => import("./_games/build/BuildWorld"), {
+    ssr: false,
+    loading: Loading,
+  }),
 } satisfies Record<GameImpl, unknown>;
 
 /** Every game component takes exactly this. */

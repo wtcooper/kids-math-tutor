@@ -1,0 +1,112 @@
+.pip {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 0.82rem;
+}
+.mini {
+  appearance: none;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink2);
+  border-radius: 999px;
+  padding: 3px 12px;
+}
+.toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden }
+.modeOff, .modeOn {
+  appearance: none;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  border: 0;
+  padding: 4px 14px;
+  background: transparent;
+  color: var(--ink3);
+}
+.modeOn { background: var(--clay-s); color: var(--clay-d); font-weight: 600 }
+
+.stage {
+  position: relative;
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
+.canvasWrap {
+  flex: 1 1 460px;
+  aspect-ratio: 4 / 3;
+  min-height: 340px;
+  background: #f7f2e7;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  overflow: hidden;
+  /* Without this the drag-to-spin gesture scrolls the page on a phone instead. */
+  touch-action: none;
+}
+
+.blueprint {
+  flex: 0 1 260px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 18px;
+}
+.h3 {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin: 0 0 10px;
+}
+
+.measures { margin: 0 0 20px }
+.measures > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding: 4px 0;
+}
+.measures dt { color: var(--ink2); font-size: 0.88rem }
+.measures dd {
+  margin: 0;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1rem;
+}
+.sub { color: var(--ink3); font-size: 0.8rem }
+
+.checks { list-style: none; margin: 0 0 18px; padding: 0 }
+.checks li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 0;
+  font-size: 0.88rem;
+  border-bottom: 1px solid var(--line);
+}
+.vals { font-family: var(--mono); font-variant-numeric: tabular-nums }
+.want { color: var(--ink3) }
+.ok { color: var(--sage-d) }
+.pending { color: var(--ink2) }
+.bad { color: #8c4750 }
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(250, 246, 239, 0.92);
+  border-radius: 18px;
+  padding: 16px;
+}
+.panel { max-width: 420px }
+.h2 { font-family: Georgia, serif; font-size: 1.45rem; margin: 0 0 12px }
+.recap { list-style: none; margin: 0 0 14px; padding: 0; font-size: 0.9rem; line-height: 1.7 }
+.note { color: var(--ink2); font-size: 0.9rem; line-height: 1.55; margin: 0 0 18px }
+.actions { display: flex; gap: 10px; flex-wrap: wrap }

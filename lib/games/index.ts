@@ -21,7 +21,8 @@ export type GameImpl =
   | "beam"
   | "balance"
   | "machine"
-  | "bakery";
+  | "bakery"
+  | "build";
 
 export interface GameMeta {
   /** Route: /play/<slug>. Stable — it is what her bookmarks point at. */
@@ -172,6 +173,16 @@ export const GAMES: readonly GameMeta[] = [
       "Buy flour, bake, set a price. Nothing is marked right — the till just tells you how the day went.",
     focus: "understanding",
     levelNames: ["Two sacks", "More markups", "Three sacks", "Tight margins"],
+  },
+  {
+    slug: "build",
+    impl: "build",
+    name: "Build World",
+    topicId: "geometry",
+    blurb:
+      "Build the commission — an exact floor, an exact number of blocks, or a plan scaled up.",
+    focus: "understanding",
+    levelNames: ["Floors", "Silos", "Anything goes", "Tight commissions"],
   },
 ];
 
