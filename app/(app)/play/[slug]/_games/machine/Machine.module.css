@@ -1,0 +1,160 @@
+.pip {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 0.82rem;
+}
+.soft { color: var(--ink3); font-size: 0.82rem }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums }
+.mini {
+  appearance: none;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink2);
+  border-radius: 999px;
+  padding: 3px 12px;
+}
+
+.stage {
+  position: relative;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 22px;
+}
+.label {
+  display: block;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 10px;
+}
+
+.machineRow { margin-bottom: 22px }
+.machine {
+  display: flex;
+  justify-content: center;
+  padding: 22px 16px;
+  background: #fffdf9;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow-x: auto;
+}
+
+/* Nesting is the precedence. Each operator draws a box around its two inputs, so what is
+   wired deeper is literally drawn inside. */
+.node {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid #e2d6c0;
+  border-radius: 12px;
+  background: rgba(255, 252, 247, 0.7);
+}
+.leaf {
+  font-family: var(--mono);
+  font-size: 1.1rem;
+  min-width: 30px;
+  text-align: center;
+  padding: 5px 9px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.hopper {
+  font-family: var(--mono);
+  font-size: 1.1rem;
+  font-weight: 600;
+  min-width: 30px;
+  text-align: center;
+  padding: 5px 9px;
+  background: #e8dbef;
+  border: 1px solid #a98cb8;
+  border-radius: 8px;
+  color: #6b4f7c;
+}
+.socket {
+  appearance: none;
+  font: inherit;
+  font-family: var(--mono);
+  font-size: 1.05rem;
+  cursor: pointer;
+  width: 38px;
+  height: 38px;
+  border: 1px dashed #c9b79b;
+  background: transparent;
+  color: var(--ink3);
+  border-radius: 9px;
+}
+.socket.filled {
+  border-style: solid;
+  background: var(--clay-s);
+  border-color: #e2b89f;
+  color: var(--clay-d);
+  font-weight: 600;
+}
+.socket.sel { border-color: var(--clay-d); box-shadow: 0 0 0 3px rgba(190, 110, 78, 0.16) }
+
+.tray { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 22px }
+.tray .label { width: 100% }
+.part {
+  appearance: none;
+  font-family: var(--mono);
+  font-size: 1.15rem;
+  cursor: pointer;
+  width: 46px;
+  height: 42px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 10px;
+}
+.part:hover:not(:disabled) { border-color: var(--clay-d); color: var(--clay-d) }
+.part:disabled { opacity: 0.4; cursor: default }
+
+.bench { border-top: 1px solid var(--line); padding-top: 16px }
+.runs { border-collapse: collapse; font-size: 0.9rem }
+.runs th {
+  text-align: left;
+  font-weight: 500;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  padding: 0 20px 6px 0;
+}
+.runs td { padding: 4px 20px 4px 0; font-size: 1rem }
+.good { color: var(--sage-d); font-weight: 600 }
+.bad { color: #8c4750 }
+.hint { color: var(--ink3); font-size: 0.84rem; margin: 10px 0 0 }
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(250, 246, 239, 0.92);
+  border-radius: 18px;
+  padding: 16px;
+}
+.panel { max-width: 440px }
+.h2 { font-family: Georgia, serif; font-size: 1.45rem; margin: 0 0 6px }
+.sub { color: var(--ink2); margin: 0 0 8px }
+.expr {
+  font-family: var(--mono);
+  font-size: 1.3rem;
+  background: var(--sage-s);
+  border: 1px solid #cfe0ca;
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: var(--sage-d);
+  margin: 0 0 14px;
+}
+.note { color: var(--ink2); font-size: 0.9rem; line-height: 1.55; margin: 0 0 18px }
+.actions { display: flex; gap: 10px; flex-wrap: wrap }

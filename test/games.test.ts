@@ -56,6 +56,15 @@ import {
   type Move,
   solvedValue,
 } from "../app/(app)/play/[slug]/_games/balance/balance-model";
+import {
+  ALL_OPS,
+  genMachine,
+  machineWorks,
+  type Node,
+  type Op,
+  runResults,
+  tidyText,
+} from "../app/(app)/play/[slug]/_games/machine/machine-model";
 
 const LEVELS = [1, 2, 3, 4];
 const SEEDS = 300;
@@ -452,5 +461,73 @@ describe("Balance", () => {
     expect(canApply(sc, { kind: "removeStones", count: 2 })).toBe(false);
     expect(canApply(sc, { kind: "removeBag", count: 1 })).toBe(false);
     expect(canApply(sc, { kind: "divide", by: 2 })).toBe(false);
+  });
+});
+
+describe("The Machine Shop", () => {
+  it("the wiring the puzzle was built from always solves it", () => {
+    for (let level = 1; level <= 4; level++) {
+      for (let s = 0; s < 200; s++) {
+        const rand = mulberry32(18000 + s);
+        const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+        const p = genMachine(level, rnd);
+        const correct: Op[] = [];
+        const collect = (n: Node) => {
+          if (n.kind !== "op") return;
+          collect(n.left);
+          correct.push(n.op);
+          collect(n.right);
+        };
+        collect(p.shape);
+        expect(correct.length, `L${level} slot count`).toBe(p.slotCount);
+        expect(machineWorks(p, correct), `L${level}: ${tidyText(p.shape)} does not solve itself`).toBe(true);
+      }
+    }
+  });
+
+  it("the last level cannot be solved by a machine that only works for one input", () => {
+    // The whole point: a fixed arrangement that happens to hit run 1 must fail run 2.
+    let foundDecoy = 0;
+    for (let s = 0; s < 200; s++) {
+      const rand = mulberry32(19000 + s);
+      const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+      const p = genMachine(4, rnd);
+      expect(p.runs.length).toBeGreaterThan(1);
+      expect(new Set(p.runs).size, "test runs must differ").toBe(p.runs.length);
+
+      // Try every wiring; any that passes only the first run must not be accepted.
+      for (const a of ALL_OPS) {
+        for (const b of ALL_OPS) {
+          const ops = [a, b];
+          const res = runResults(p, ops);
+          const firstOnly = res[0] === p.targets[0] && res.some((r, i) => r !== p.targets[i]);
+          if (firstOnly) {
+            foundDecoy++;
+            expect(machineWorks(p, ops), "a one-run fluke was accepted").toBe(false);
+          }
+        }
+      }
+    }
+    expect(foundDecoy, "no one-run flukes exist, so the level teaches nothing").toBeGreaterThan(0);
+  });
+
+  it("writes the expression with brackets only where they change the meaning", () => {
+    const n = (v: number): Node => ({ kind: "num", value: v });
+    const o = (op: Op, left: Node, right: Node): Node => ({ kind: "op", op, left, right });
+    expect(tidyText(o("+", o("×", n(3), n(4)), n(5)))).toBe("3 × 4 + 5");
+    expect(tidyText(o("×", o("+", n(3), n(4)), n(5)))).toBe("(3 + 4) × 5");
+    expect(tidyText(o("-", n(9), o("-", n(4), n(2))))).toBe("9 - (4 - 2)");
+    expect(tidyText(o("-", o("-", n(9), n(4)), n(2)))).toBe("9 - 4 - 2");
+  });
+
+  it("never asks for a machine that divides by zero", () => {
+    for (let level = 1; level <= 4; level++) {
+      for (let s = 0; s < 150; s++) {
+        const rand = mulberry32(20000 + s);
+        const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+        const p = genMachine(level, rnd);
+        for (const t of p.targets) expect(Number.isFinite(t)).toBe(true);
+      }
+    }
   });
 });

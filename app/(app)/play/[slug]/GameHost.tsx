@@ -40,6 +40,10 @@ const LOADERS = {
     ssr: false,
     loading: Loading,
   }),
+  machine: dynamic(() => import("./_games/machine/Machine"), {
+    ssr: false,
+    loading: Loading,
+  }),
 } satisfies Record<GameImpl, unknown>;
 
 /** Every game component takes exactly this. */

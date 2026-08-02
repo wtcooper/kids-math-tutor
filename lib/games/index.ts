@@ -19,7 +19,8 @@ export type GameImpl =
   | "tiles"
   | "cut"
   | "beam"
-  | "balance";
+  | "balance"
+  | "machine";
 
 export interface GameMeta {
   /** Route: /play/<slug>. Stable — it is what her bookmarks point at. */
@@ -145,6 +146,21 @@ export const GAMES: readonly GameMeta[] = [
       "Take the same thing off both pans until one bag stands alone. Whatever balances it is x.",
     focus: "understanding",
     levelNames: ["x + a = b", "n bags", "n bags and stones", "Bags on both sides"],
+  },
+  {
+    slug: "machine",
+    impl: "machine",
+    name: "The Machine Shop",
+    topicId: "pemdas",
+    blurb:
+      "Fit operators into a machine until the outlet reads the order slip. The wiring is the precedence.",
+    focus: "understanding",
+    levelNames: [
+      "One operator",
+      "Two operators",
+      "A hopper",
+      "It must work for any n",
+    ],
   },
 ];
 
