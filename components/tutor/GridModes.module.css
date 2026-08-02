@@ -1,0 +1,84 @@
+.wrap { display:flex; justify-content:center; padding:16px 6px 6px; overflow-x:auto }
+.grid { display:inline-block }
+
+.row { display:grid; height:var(--rh); align-items:center }
+.row.ruled { border-bottom:2px solid var(--ink2) }
+.row.carry { height:calc(var(--rh) * .68); margin-bottom:2px }
+
+.cell { width:var(--cw); height:var(--rh); display:flex; align-items:center;
+  justify-content:center; font-family:var(--mono); font-size:var(--fs);
+  font-variant-numeric:tabular-nums; color:var(--ink) }
+
+.row.carry .cell { height:calc(var(--rh) * .68); font-size:calc(var(--fs) * .5);
+  color:var(--clay-d) }
+
+.digit {}
+.sign { color:var(--ink2) }
+.answer { color:var(--sage-d); font-weight:600 }
+.carry, .borrow { color:var(--clay-d) }
+.placeholder { color:var(--ink3) }
+.struck { position:relative; color:var(--ink3) }
+.struck::after { content:""; position:absolute; left:14%; right:14%; top:50%;
+  height:1.5px; background:var(--ink3); transform:rotate(-14deg) }
+.dot { width:auto }
+
+.input { font:inherit; font-family:var(--mono); font-size:var(--fs); text-align:center;
+  border:1px solid var(--line2); border-radius:8px; background:var(--paper);
+  width:calc(var(--cw) - 6px); height:calc(var(--rh) - 8px); padding:0; color:var(--ink) }
+.input:focus { outline:2px solid var(--clay-s); border-color:var(--clay) }
+.input.ok { border-color:var(--sage); background:var(--sage-s); color:var(--sage-d) }
+/* Amber, not green — a column that was shown must not look earned. */
+.input.given { border-color:var(--gold); background:var(--gold-s); color:var(--gold-d) }
+
+/* Her own regrouping working. Clay so it reads as hers, not as the app's. */
+.scratchBox { font:inherit; font-family:var(--mono);
+  font-size:calc(var(--fs) * .5); text-align:center; border:1px dashed var(--line2);
+  border-radius:6px; background:transparent; color:var(--clay);
+  width:calc(var(--cw) - 8px); height:calc(var(--rh) * .58); padding:0 }
+.scratchBox:focus { outline:none; border-color:var(--clay); border-style:solid }
+
+/* ---------- long division ---------- */
+.longDiv { display:flex; align-items:flex-start; font-family:var(--mono);
+  font-variant-numeric:tabular-nums; font-size:var(--fs) }
+.divisor { padding:calc(var(--rh) * .55) 8px 0 0; color:var(--ink) }
+.bracket { border-left:2px solid var(--ink2); border-top:2px solid var(--ink2);
+  border-top-left-radius:8px; padding:2px 10px 0 10px }
+.quotient { display:flex; height:var(--rh); align-items:center;
+  border-bottom:0; margin-top:calc(var(--rh) * -1 - 4px); margin-bottom:4px }
+.dividend { display:flex; height:var(--rh); align-items:center }
+.qDigit { width:var(--cw); display:flex; align-items:center; justify-content:center;
+  color:var(--sage-d); font-weight:600 }
+.dividend .qDigit { color:var(--ink); font-weight:400 }
+.divRow { display:flex; gap:12px; height:var(--rh); align-items:center;
+  font-size:calc(var(--fs) * .78) }
+.divProduct { color:var(--ink2) }
+.divRemainder { color:var(--sage-d) }
+.brought { color:var(--clay-d) }
+.remainderTag { text-align:center; color:var(--ink2); font-size:.9rem; margin-top:6px }
+
+/* ---------- D-M-S-B strip ---------- */
+.dmsb { display:flex; gap:8px; justify-content:center; margin:14px 0 4px; flex-wrap:wrap }
+.move { display:flex; align-items:baseline; gap:6px; font-size:.76rem; color:var(--ink3);
+  border:1px solid var(--line); border-radius:999px; padding:.25rem .7rem;
+  background:var(--paper2) }
+.move b { font-family:var(--serif); font-size:.95rem }
+.moveOn { border-color:var(--clay); background:var(--clay-s); color:var(--clay-d) }
+.movePast { color:var(--sage-d); border-color:#cfe0ca; background:var(--sage-s) }
+
+.progress { height:4px; background:var(--line); border-radius:999px; overflow:hidden;
+  margin:6px 0 4px }
+.progress i { display:block; height:100%; background:var(--sage); transition:width .25s }
+
+.narr { border:1px solid var(--line); border-radius:14px; padding:14px 16px;
+  background:var(--paper2); margin-top:12px }
+.narrLabel { font-weight:600; font-size:.96rem; margin-bottom:5px }
+.narrMain { margin:0; color:var(--ink2); font-size:.92rem; line-height:1.55 }
+.narrSub { margin:5px 0 0; color:var(--ink3); font-size:.88rem }
+
+.controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:14px }
+.counter { font-size:.78rem; color:var(--ink3); margin-left:auto }
+.hintLine { margin:14px 0 0; font-size:.9rem; color:var(--ink2) }
+.solved { margin:16px 0 0; font-size:.96rem; color:var(--sage-d) }
+
+/* The answer row holds inputs, so it needs the full row height plus a little air. */
+.row.sum { height:calc(var(--rh) + 6px); margin-top:4px }

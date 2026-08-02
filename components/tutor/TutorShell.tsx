@@ -9,6 +9,7 @@ import type { FactKind } from "@/lib/math/facts";
 import { PracticeMode } from "./PracticeMode";
 import { DrillMode, LearnMode } from "./FlashcardMode";
 import { StepsWorkspace } from "./StepsWorkspace";
+import { GridWorkspace } from "./GridWorkspace";
 import styles from "./TutorShell.module.css";
 
 /**
@@ -54,7 +55,15 @@ export function TutorShell({
           ["try", "You try"],
           ["practice", "Practice"],
         ]
-      : [["practice", "Practice"]];
+      : runtime?.gridBuild
+        ? [
+            // Column arithmetic has no Picture it — the original's add/sub/mul/div
+            // pictures returned null, because the grid itself is the picture.
+            ["watch", "Watch it"],
+            ["try", "You try"],
+            ["practice", "Practice"],
+          ]
+        : [["practice", "Practice"]];
 
   const go = useCallback(
     (next: { level?: number; mode?: Mode }) => {
@@ -142,6 +151,13 @@ export function TutorShell({
           ) : (
             <LearnMode key={`${kind}-${level}`} kind={kind} level={level} />
           )
+        ) : runtime && runtime.gridBuild && mode !== "practice" ? (
+          <GridWorkspace
+            key={`${topic.id}-${level}-${mode}`}
+            runtime={runtime}
+            level={level}
+            mode={mode === "try" ? "try" : "watch"}
+          />
         ) : runtime && runtime.build && mode !== "practice" ? (
           <StepsWorkspace
             key={`${topic.id}-${level}-${mode}`}

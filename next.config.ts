@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // The original tutor is a static HTML file read at request time by app/(app)/tutor/route.ts.
+  // The original tutor is a static HTML file read at request time by app/(app)/tutor-original/route.ts.
   // Tracing does not follow the read on its own, so name it explicitly or the file is
   // missing from the deployed bundle.
   //
@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
   // every local check and only 500s in production. Removed entirely at cutover, once the
   // React tutor is the only one.
   outputFileTracingIncludes: {
-    "/tutor": ["./docs/math-table.html"],
+    "/tutor-original": ["./docs/math-table.html"],
   },
 };
 

@@ -1,0 +1,37 @@
+.top { display:flex; justify-content:space-between; align-items:flex-start; gap:16px;
+  flex-wrap:wrap; margin-bottom:18px }
+.back { font-size:.83rem; color:var(--ink3); text-decoration:none }
+.back:hover { color:var(--ink2) }
+.title { font-size:1.7rem; margin-top:4px }
+.subtitle { margin:5px 0 0; color:var(--ink2); font-size:.94rem; max-width:56ch }
+.topActions { display:flex; gap:8px; align-items:center }
+
+.pickers { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:12px }
+.picker { display:flex; flex-direction:column; gap:4px; flex:1 1 260px }
+.pickerLabel { font-size:.72rem; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--ink3) }
+.select { font:inherit; font-size:.98rem; padding:.55rem .75rem; border-radius:12px;
+  border:1px solid var(--line2); background:var(--paper); color:var(--ink);
+  appearance:none; cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,var(--ink3) 50%),
+                   linear-gradient(135deg,var(--ink3) 50%,transparent 50%);
+  background-position:calc(100% - 18px) 55%, calc(100% - 13px) 55%;
+  background-size:5px 5px, 5px 5px; background-repeat:no-repeat }
+.select:focus { outline:2px solid var(--clay-s); border-color:var(--clay) }
+
+.aboutRow { margin-bottom:10px }
+.aboutToggle { appearance:none; border:none; background:none; font:inherit;
+  font-size:.85rem; color:var(--blue); cursor:pointer; padding:0;
+  text-decoration:underline; text-underline-offset:3px }
+.aboutBody { margin:0 0 14px; padding:14px 16px; background:var(--blue-s);
+  border-radius:12px; font-size:.9rem; color:var(--ink2); line-height:1.55; max-width:68ch }
+
+.modes { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:14px }
+.mode { appearance:none; font:inherit; font-size:.82rem; cursor:pointer;
+  border:1px solid var(--line); background:var(--paper); color:var(--ink2);
+  border-radius:999px; padding:.34rem .85rem; transition:.15s }
+.mode:hover { border-color:var(--line2); color:var(--ink) }
+.mode.on { background:var(--sage-s); border-color:#cfe0ca; color:var(--sage-d);
+  font-weight:600 }
+
+.footNote { margin-top:20px; font-size:.8rem; color:var(--ink3) }

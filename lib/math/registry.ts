@@ -11,6 +11,8 @@
 
 import type { Rng } from "./rng";
 import type { StepsModel } from "./types";
+import type { DivGridModel, GridModel } from "./builds/grid";
+import { buildAdd, buildDecAddSub, buildDiv, buildMul, buildSub } from "./builds/grid";
 import { buildFactors } from "./topics/factors";
 import { buildExponents, buildPemdas, buildPlace } from "./builds/whole-numbers";
 import { buildFracAddSub, buildFracEquiv, buildFracMixed, buildFracMulDiv } from "./builds/fractions";
@@ -100,6 +102,8 @@ export interface TopicRuntime<P = unknown> {
    * is still being ported, in which case the tutor shows Practice only.
    */
   build?(p: P): StepsModel;
+  /** Column-arithmetic equivalent of build(), for the five grid topics. */
+  gridBuild?(p: P): GridModel | DivGridModel;
 }
 
 const num = (s: string): number => Number(String(s).replace(/,/g, "").trim());
@@ -117,6 +121,7 @@ const R: Record<string, TopicRuntime<any>> = {
     check: (p, v) => num(v.q) === addAnswer(p),
     answer: (p) => fmt(addAnswer(p)),
     hint: addHint,
+    gridBuild: buildAdd,
   },
   sub: {
     id: "sub",
@@ -126,6 +131,7 @@ const R: Record<string, TopicRuntime<any>> = {
     check: (p, v) => num(v.q) === subAnswer(p),
     answer: (p) => fmt(subAnswer(p)),
     hint: subHint,
+    gridBuild: buildSub,
   },
   mul: {
     id: "mul",
@@ -135,6 +141,7 @@ const R: Record<string, TopicRuntime<any>> = {
     check: (p, v) => num(v.q) === p.a * p.b,
     answer: (p) => fmt(p.a * p.b),
     hint: mulHint,
+    gridBuild: buildMul,
   },
   div: {
     id: "div",
@@ -152,6 +159,7 @@ const R: Record<string, TopicRuntime<any>> = {
     },
     answer: divAnswerText,
     hint: divHint,
+    gridBuild: buildDiv,
   },
   "dec-addsub": {
     id: "dec-addsub",
@@ -160,6 +168,7 @@ const R: Record<string, TopicRuntime<any>> = {
     fields: one(),
     check: (p, v) => rd(num(v.q), 6) === rd(decAnswer(p), 6),
     answer: (p) => String(rd(decAnswer(p), 6)),
+    gridBuild: buildDecAddSub,
   },
   place: {
     id: "place",
