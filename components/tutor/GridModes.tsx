@@ -16,7 +16,27 @@ import styles from "./GridModes.module.css";
  *   wipe her regrouping working (issue 12). They live in state here, keyed by column.
  */
 
-function Grid({
+function Grid(props: {
+  model: GridModel;
+  /** Phases strictly below this are shown. */
+  reveal: number;
+  answers?: Record<number, { val: string; state: "" | "ok" | "given" }>;
+  onAnswer?: (slot: number, val: string) => void;
+  scratch?: Record<number, string>;
+  onScratch?: (col: number, val: string) => void;
+  interactive?: boolean;
+}) {
+  return (
+    <div className={styles.wrap}>
+      <div className={styles.grid}>
+        <GridRows {...props} />
+      </div>
+    </div>
+  );
+}
+
+/** The rows themselves, shared by the plain grid and the division bracket. */
+function GridRows({
   model,
   reveal,
   answers,
@@ -25,8 +45,7 @@ function Grid({
   onScratch,
   interactive,
 }: {
-  model: GridModel;
-  /** Phases strictly below this are shown. */
+  model: GridModel | DivGridModel;
   reveal: number;
   answers?: Record<number, { val: string; state: "" | "ok" | "given" }>;
   onAnswer?: (slot: number, val: string) => void;
@@ -37,8 +56,7 @@ function Grid({
   const template = `repeat(${model.cols}, var(--cw))`;
 
   return (
-    <div className={styles.wrap}>
-      <div className={styles.grid}>
+    <>
         {model.rows.map((row, ri) => {
           if (row.from !== undefined && row.from >= reveal) return null;
           return (
@@ -97,8 +115,19 @@ function Grid({
                 lost her carries every time until they were re-emitted (BUILD-NOTES 12).
                 Column 1 is the operator column, so it never gets one.
               */}
+              {/* A partial rule, as long division draws under each product. */}
+              {row.underlineFrom !== undefined && row.underlineTo !== undefined ? (
+                <span
+                  className={styles.partialRule}
+                  style={{
+                    gridColumn: `${row.underlineFrom} / ${row.underlineTo + 1}`,
+                    gridRow: 1,
+                  }}
+                />
+              ) : null}
+
               {interactive && row.kind === "carry"
-                ? Array.from({ length: model.cols - 1 }, (_, i) => i + 2).map((col) => (
+                ? (model.scratchCols ?? []).map((col) => (
                       <input
                         key={`s${col}`}
                         className={`${styles.cell} ${styles.scratchBox}`}
@@ -114,63 +143,43 @@ function Grid({
             </div>
           );
         })}
-      </div>
-    </div>
+    </>
   );
 }
 
-function DivGrid({ model, reveal }: { model: DivGridModel; reveal: number }) {
-  // Each phase reveals one piece: the quotient digit, the product, the remainder, or the
-  // brought-down digit. Walking the phases up to `reveal` says exactly what is on screen.
-  const shown = model.divSteps.map(() => ({ q: false, p: false, r: false, b: false }));
-  for (let i = 0; i < Math.min(reveal, model.reveals.length); i++) {
-    const rv = model.reveals[i];
-    if (rv.part === "skip") continue;
-    shown[rv.step][rv.part] = true;
-  }
-  const finished = reveal > model.reveals.length;
-
+/**
+ * Long division is the same column grid as everything else — the bracket and the divisor
+ * are chrome around it. Rendering it any other way is what made the columns fail to line
+ * up, because the products and remainders must sit under the digits they came from.
+ */
+function DivGrid({
+  model,
+  reveal,
+  answers,
+  onAnswer,
+  interactive,
+}: {
+  model: DivGridModel;
+  reveal: number;
+  answers?: Record<number, { val: string; state: "" | "ok" | "given" }>;
+  onAnswer?: (slot: number, val: string) => void;
+  interactive?: boolean;
+}) {
   return (
-    <div className={styles.wrap}>
+    <div className={`${styles.wrap} ${styles.divWrap}`}>
       <div className={styles.longDiv}>
         <div className={styles.divisor}>{model.divisor}</div>
         <div className={styles.bracket}>
-          <div className={styles.quotient}>
-            {model.divSteps.map((s, i) =>
-              s.hidden ? (
-                <span key={i} className={styles.qDigit} />
-              ) : (
-                <span key={i} className={styles.qDigit}>
-                  {shown[i].q ? s.quotient : ""}
-                </span>
-              ),
-            )}
-          </div>
-          <div className={styles.dividend}>
-            {model.dividendDigits.map((d, i) => (
-              <span key={i} className={styles.qDigit}>
-                {d}
-              </span>
-            ))}
-          </div>
-          {model.divSteps.map((s, i) =>
-            s.hidden || !shown[i].p ? null : (
-              <div key={i} className={styles.divRow}>
-                <span className={styles.divProduct}>− {s.product}</span>
-                {shown[i].r ? (
-                  <span className={styles.divRemainder}>
-                    = {s.remainder}
-                    {shown[i].b && s.bring !== null ? (
-                      <span className={styles.brought}> ↓{s.bring}</span>
-                    ) : null}
-                  </span>
-                ) : null}
-              </div>
-            ),
-          )}
+          <GridRows
+            model={model}
+            reveal={reveal}
+            answers={answers}
+            onAnswer={onAnswer}
+            interactive={interactive}
+          />
         </div>
       </div>
-      {model.remainder > 0 && finished ? (
+      {model.remainder > 0 && reveal > model.narration.length - 1 ? (
         <p className={styles.remainderTag}>remainder {model.remainder}</p>
       ) : null}
     </div>
@@ -321,7 +330,13 @@ export function GridTry({
   return (
     <div>
       {model.kind === "div" ? (
-        <DivGrid model={model as DivGridModel} reveal={reveal} />
+        <DivGrid
+          model={model as DivGridModel}
+          reveal={reveal}
+          answers={answers}
+          onAnswer={onAnswer}
+          interactive
+        />
       ) : (
         <Grid
           model={model as GridModel}

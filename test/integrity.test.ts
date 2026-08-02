@@ -198,3 +198,98 @@ describe("grid models are complete", () => {
     }
   });
 });
+
+describe("You try is completable, and its boxes are in the right places", () => {
+  it("filling every slot in phase order spells the answer", () => {
+    for (const topic of nonFacts) {
+      const rt = runtimeFor(topic.id)!;
+      if (!rt.gridBuild) continue;
+      for (let lvl = 1; lvl <= topic.levels.length; lvl++) {
+        const rng = makeRng(mulberry32(7000 + lvl));
+        for (let i = 0; i < 20; i++) {
+          const p = rt.gen(lvl, rng);
+          const m = rt.gridBuild(p);
+          const tag = `${topic.id} L${lvl} — ${rt.title(p)}`;
+
+          // Every slot must be reachable: phases run 0..n and never skip backwards.
+          const phases = m.slots.map((s) => s.phase);
+          expect(Math.min(...phases), `${tag} first slot phase`).toBe(phases[0]);
+          for (let k = 1; k < phases.length; k++) {
+            expect(phases[k], `${tag} slot ${k} goes backwards`).toBeGreaterThanOrEqual(
+              phases[k - 1],
+            );
+          }
+
+          // Every slot must correspond to a cell that actually renders.
+          const cellSlots = new Set(
+            m.rows.flatMap((r) => r.cells.map((c) => c.slot).filter((x) => x !== undefined)),
+          );
+          for (const s of m.slots) {
+            expect(cellSlots.has(s.idx), `${tag} slot ${s.idx} has no cell`).toBe(true);
+          }
+        }
+      }
+    }
+  });
+
+  it("no scratch box sits where a carry can never land", () => {
+    // Addition and multiplication carry leftward, so the ones column never receives one.
+    // A box there is a box that stays empty forever — which is what it looked like.
+    for (const id of ["add", "mul", "dec-addsub", "sub"]) {
+      const rt = runtimeFor(id)!;
+      const topic = TOPICS.find((t) => t.id === id)!;
+      for (let lvl = 1; lvl <= topic.levels.length; lvl++) {
+        const rng = makeRng(mulberry32(7500 + lvl));
+        for (let i = 0; i < 20; i++) {
+          const m = rt.gridBuild!(rt.gen(lvl, rng));
+          if (m.kind === "div") continue;
+          expect(m.scratchCols, `${id} has no scratchCols`).toBeDefined();
+          const onesCol = Math.max(
+            ...m.rows
+              .filter((r) => r.kind === "top")
+              .flatMap((r) => r.cells.map((c) => c.col)),
+          );
+          // dec-addsub is sometimes a subtraction, so key on the operator actually
+          // rendered rather than on the topic id.
+          const sign = m.rows
+            .flatMap((r) => r.cells)
+            .find((c) => c.kind === "sign")?.text;
+          const subtracts = sign === "−";
+          if (subtracts) {
+            // Subtraction can borrow into any column, including the ones.
+            expect(m.scratchCols).toContain(onesCol);
+          } else {
+            expect(
+              m.scratchCols,
+              `${id}: scratch box on the ones column (${onesCol}) can never be filled`,
+            ).not.toContain(onesCol);
+          }
+        }
+      }
+    }
+  });
+
+  it("every cell sits inside the grid", () => {
+    for (const topic of nonFacts) {
+      const rt = runtimeFor(topic.id)!;
+      if (!rt.gridBuild) continue;
+      for (let lvl = 1; lvl <= topic.levels.length; lvl++) {
+        const rng = makeRng(mulberry32(8000 + lvl));
+        for (let i = 0; i < 20; i++) {
+          const p = rt.gen(lvl, rng);
+          const m = rt.gridBuild(p);
+          for (const row of m.rows) {
+            for (const c of row.cells) {
+              // Column 0 is not a valid CSS grid line; a cell there silently wraps.
+              expect(c.col, `${topic.id} L${lvl}: cell at column ${c.col}`).toBeGreaterThan(0);
+              expect(c.col, `${topic.id} L${lvl}: cell past column ${m.cols}`).toBeLessThanOrEqual(m.cols);
+            }
+            if (row.underlineFrom !== undefined) {
+              expect(row.underlineFrom, `${topic.id}: rule starts at 0`).toBeGreaterThan(0);
+            }
+          }
+        }
+      }
+    }
+  });
+});

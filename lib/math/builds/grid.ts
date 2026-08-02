@@ -41,10 +41,13 @@ export interface Cell {
 
 export interface GridRow {
   /** Visual role, used for spacing and the underline. */
-  kind: "carry" | "top" | "bottom" | "sum" | "partial" | "quotient" | "rule";
+  kind: "carry" | "top" | "bottom" | "sum" | "partial" | "quotient" | "rem";
   cells: Cell[];
-  /** Draw a rule under this row. */
+  /** Draw a rule under the whole row. */
   underline?: boolean;
+  /** Or under just these columns, as long division does. */
+  underlineFrom?: number;
+  underlineTo?: number;
   from?: number;
 }
 
@@ -58,6 +61,11 @@ export interface GridSlot {
 
 export interface GridModel {
   kind: "grid";
+  /**
+   * Which columns get a scratch box in You try. Addition never carries into the ones
+   * column, so it gets n-1; subtraction can borrow anywhere, so it gets all n.
+   */
+  scratchCols?: number[];
   title: string;
   cols: number;
   rows: GridRow[];
@@ -187,6 +195,13 @@ function columnGrid(
 
   narration.push({ label: "Done", main: `The answer is ${answerText}.` });
 
+  // Addition carries leftward, so the ones column can never receive one — an empty box
+  // there is a box that will never be filled. Subtraction can borrow into any column.
+  const scratchCols =
+    m.op === "+"
+      ? Array.from({ length: n - 1 }, (_, i) => colOf(i))
+      : Array.from({ length: n }, (_, i) => colOf(i));
+
   return {
     kind: "grid",
     title,
@@ -201,6 +216,7 @@ function columnGrid(
     slots,
     answerText,
     dotCol,
+    scratchCols,
   };
 }
 
@@ -361,6 +377,8 @@ export function buildMul(p: MulProblem): GridModel {
     narration,
     slots,
     answerText: fmt(m.product),
+    // Same rule as addition: nothing is ever carried into the ones column.
+    scratchCols: Array.from({ length: cols - 2 }, (_, i) => i + 1),
   };
 }
 
@@ -383,26 +401,36 @@ export interface DivGridModel extends Omit<GridModel, "kind"> {
   dividend: number;
   /** Which of D-M-S-B each phase belongs to. */
   dmsb: (0 | 1 | 2 | 3)[];
-  /** What each phase reveals, so the bracket can draw progressively. */
-  reveals: { step: number; part: "skip" | "q" | "p" | "r" | "b" }[];
 }
 
 export function buildDiv(p: DivProblem): DivGridModel {
   const m: DivModel = buildDivModel(p.dividend, p.divisor);
   const D = p.divisor;
+  const cols = m.cols + 1;
+  /** Column 1 holds the minus sign; dividend digit j sits at column j + 2. */
+  const colOfDigit = (j: number) => j + 2;
   const slots: GridSlot[] = [];
   const narration: GridModel["narration"] = [];
-  /** Which of D-M-S-B each phase is, for the strip. */
   const dmsb: (0 | 1 | 2 | 3)[] = [];
-  /** How much of each division step is revealed at each phase. */
-  const reveals: { step: number; part: "skip" | "q" | "p" | "r" | "b" }[] = [];
+
+  // Long division is a column grid like the others; the bracket is chrome around it.
+  // Column i+1 holds dividend digit i, so the quotient digit for step i sits directly
+  // above it and each product lines up under the digits it came from.
+  const quotient: Cell[] = [];
+  const dividend: Cell[] = m.ds.map((v, j) => ({
+    col: colOfDigit(j),
+    text: String(v),
+    kind: "digit" as const,
+  }));
+  const rows: GridRow[] = [
+    { kind: "quotient", cells: quotient },
+    { kind: "top", cells: dividend },
+  ];
 
   let phase = 0;
 
   m.steps.forEach((s, i) => {
     if (s.hidden) {
-      // The 372 ÷ 5 case: nothing goes above the first digit, and the original explains
-      // why rather than silently skipping it.
       const next = m.steps[i + 1];
       narration.push({
         label: "Look further",
@@ -410,12 +438,24 @@ export function buildDiv(p: DivProblem): DivGridModel {
         sub: `So take the first two digits together and ask about ${next ? next.cur : s.cur} instead. Nothing is written above the ${s.cur} yet.`,
       });
       dmsb.push(0);
-      reveals.push({ step: i, part: "skip" });
       phase++;
       return;
     }
 
-    // D — divide
+    // D — the quotient digit goes above this column.
+    quotient.push({
+      col: colOfDigit(i),
+      text: String(s.q),
+      kind: "answer",
+      from: phase,
+      slot: slots.length,
+    });
+    slots.push({
+      idx: slots.length,
+      expect: String(s.q),
+      phase,
+      label: `How many ${D}s fit into ${s.cur}?`,
+    });
     narration.push({
       label: "Divide",
       main: `How many ${D}s fit into ${s.cur}? ${s.q}. Write it above the ${PLACE_NAMES[m.n - 1 - i] ?? "next"} digit.`,
@@ -425,58 +465,79 @@ export function buildDiv(p: DivProblem): DivGridModel {
           : `Check: ${D} × ${s.q} = ${s.p} which fits, but ${D} × ${s.q + 1} = ${D * (s.q + 1)} is too big.`,
     });
     dmsb.push(0);
-    reveals.push({ step: i, part: "q" });
-    slots.push({
-      idx: slots.length,
-      expect: String(s.q),
-      phase,
-      label: `How many ${D}s fit into ${s.cur}?`,
-    });
     phase++;
 
-    // M — multiply
+    // M — the product, right-aligned under the digits consumed, with a minus and a rule.
+    const ps = String(s.p);
+    const pEnd = colOfDigit(i);
+    const pStart = pEnd - ps.length + 1;
+    const productCells: Cell[] = [
+      { col: pStart - 1, text: "−", kind: "sign" },
+      ...ps.split("").map((d, x) => ({
+        col: pStart + x,
+        text: d,
+        kind: "answer" as const,
+        slot: slots.length + x,
+      })),
+    ];
+    ps.split("").forEach((d, x) =>
+      slots.push({
+        idx: slots.length,
+        expect: d,
+        phase,
+        label: `${s.q} × ${D}, digit ${x + 1}`,
+      }),
+    );
+    rows.push({
+      kind: "partial",
+      cells: productCells,
+      from: phase,
+      underlineFrom: pStart - 1,
+      underlineTo: pEnd,
+    });
     narration.push({
       label: "Multiply",
       main: `${s.q} × ${D} = ${s.p}. Write ${s.p} underneath ${s.cur}.`,
       sub: `That is the part of ${s.cur} we can actually hand out in groups of ${D}.`,
     });
     dmsb.push(1);
-    reveals.push({ step: i, part: "p" });
-    // One box per digit of the product — she writes it out, not just the answer.
-    String(s.p)
-      .split("")
-      .forEach((d, x) =>
-        slots.push({
-          idx: slots.length,
-          expect: d,
-          phase,
-          label: `${s.q} × ${D}, digit ${x + 1}`,
-        }),
-      );
     phase++;
 
-    // S — subtract
+    // S — the remainder, same alignment. The brought-down digit joins it at B.
+    const rs = String(s.r);
+    const rEnd = colOfDigit(i);
+    const rStart = rEnd - rs.length + 1;
+    const remCells: Cell[] = rs.split("").map((d, x) => ({
+      col: rStart + x,
+      text: d,
+      kind: "answer" as const,
+      slot: slots.length + x,
+    }));
+    rs.split("").forEach((d, x) =>
+      slots.push({
+        idx: slots.length,
+        expect: d,
+        phase,
+        label: `${s.cur} − ${s.p}, digit ${x + 1}`,
+      }),
+    );
+    const remPhase = phase;
     narration.push({
       label: "Subtract",
       main: `${s.cur} − ${s.p} = ${s.r}. That is what is left over.`,
       sub: `${s.r} is smaller than ${D}, which is exactly what we want.`,
     });
     dmsb.push(2);
-    reveals.push({ step: i, part: "r" });
-    String(s.r)
-      .split("")
-      .forEach((d, x) =>
-        slots.push({
-          idx: slots.length,
-          expect: d,
-          phase,
-          label: `${s.cur} − ${s.p}, digit ${x + 1}`,
-        }),
-      );
     phase++;
 
-    // B — bring down
+    // B — the brought-down digit lands on the remainder row, one column right.
     if (s.bring !== null) {
+      remCells.push({
+        col: colOfDigit(i + 1),
+        text: String(s.bring),
+        kind: "borrow",
+        from: phase,
+      });
       const next = m.steps[i + 1];
       narration.push({
         label: "Bring down",
@@ -484,9 +545,10 @@ export function buildDiv(p: DivProblem): DivGridModel {
         sub: "Then start the cycle over: divide, multiply, subtract, bring down.",
       });
       dmsb.push(3);
-      reveals.push({ step: i, part: "b" });
       phase++;
     }
+
+    rows.push({ kind: "rem", cells: remCells, from: remPhase });
   });
 
   const ansText = m.remainder > 0 ? `${fmt(m.quotient)} remainder ${m.remainder}` : fmt(m.quotient);
@@ -502,8 +564,8 @@ export function buildDiv(p: DivProblem): DivGridModel {
   return {
     kind: "div",
     title: `${fmt(p.dividend)} ÷ ${p.divisor}`,
-    cols: m.cols,
-    rows: [],
+    cols,
+    rows,
     narration,
     slots,
     answerText: m.remainder ? `${fmt(m.quotient)} r${m.remainder}` : fmt(m.quotient),
@@ -520,7 +582,6 @@ export function buildDiv(p: DivProblem): DivGridModel {
     })),
     remainder: m.remainder,
     dmsb,
-    reveals,
   };
 }
 

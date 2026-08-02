@@ -37,24 +37,26 @@
   width:calc(var(--cw) - 8px); height:calc(var(--rh) * .58); padding:0 }
 .scratchBox:focus { outline:none; border-color:var(--clay); border-style:solid }
 
-/* ---------- long division ---------- */
-.longDiv { display:flex; align-items:flex-start; font-family:var(--mono);
-  font-variant-numeric:tabular-nums; font-size:var(--fs) }
-.divisor { padding:calc(var(--rh) * .55) 8px 0 0; color:var(--ink) }
-.bracket { border-left:2px solid var(--ink2); border-top:2px solid var(--ink2);
-  border-top-left-radius:8px; padding:2px 10px 0 10px }
-.quotient { display:flex; height:var(--rh); align-items:center;
-  border-bottom:0; margin-top:calc(var(--rh) * -1 - 4px); margin-bottom:4px }
-.dividend { display:flex; height:var(--rh); align-items:center }
-.qDigit { width:var(--cw); display:flex; align-items:center; justify-content:center;
-  color:var(--sage-d); font-weight:600 }
-.dividend .qDigit { color:var(--ink); font-weight:400 }
-.divRow { display:flex; gap:12px; height:var(--rh); align-items:center;
-  font-size:calc(var(--fs) * .78) }
-.divProduct { color:var(--ink2) }
-.divRemainder { color:var(--sage-d) }
-.brought { color:var(--clay-d) }
-.remainderTag { text-align:center; color:var(--ink2); font-size:.9rem; margin-top:6px }
+/* ---------- long division ----------
+   The quotient row sits ABOVE the bracket, so it is lifted out of flow; everything
+   below is the same column grid the other topics use, which is what keeps the
+   products lined up under the digits they came from. */
+.longDiv { display:flex; align-items:flex-start; padding-top:var(--rh) }
+.divWrap { display:flex; flex-direction:column; align-items:center }
+.divisor { font-family:var(--mono); font-variant-numeric:tabular-nums;
+  font-size:var(--fs); color:var(--ink); padding:2px 10px 0 0;
+  align-self:flex-start; margin-top:4px }
+.bracket { border-left:2.5px solid var(--ink2); border-top:2.5px solid var(--ink2);
+  border-top-left-radius:10px; padding:2px 12px 0 8px; position:relative }
+/* The quotient row lives above the bracket line. */
+.row.quotient { position:absolute; top:calc(var(--rh) * -1 - 4px); left:8px;
+  right:12px }
+.row.quotient .cell, .row.quotient .input { color:var(--sage-d); font-weight:600 }
+.row.rem { }
+.partialRule { align-self:end; height:2px; background:var(--ink2); margin-top:2px;
+  width:100% }
+.remainderTag { text-align:center; color:var(--clay-d); font-size:1rem;
+  font-family:var(--mono); margin-top:6px }
 
 /* ---------- D-M-S-B strip ---------- */
 .dmsb { display:flex; gap:8px; justify-content:center; margin:14px 0 4px; flex-wrap:wrap }
