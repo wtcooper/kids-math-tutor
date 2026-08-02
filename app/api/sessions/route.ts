@@ -3,11 +3,12 @@ import { requireApiPerson } from "@/lib/auth/person";
 import { getDb } from "@/lib/db";
 import { gameSessions } from "@/lib/db/schema";
 import { BY_ID } from "@/lib/topics";
-import { GAMES } from "@/lib/games";
+import { GAME_BY_SLUG } from "@/lib/games";
 
 interface Body {
   clientSessionId: string;
-  topicId: string;
+  /** Which game — several games can teach the same topic, so the topic is not enough. */
+  gameSlug: string;
   level: number;
 }
 
@@ -26,14 +27,14 @@ export async function POST(request: Request) {
     return badRequest("body must be JSON");
   }
 
-  const { clientSessionId, topicId, level } = body ?? {};
+  const { clientSessionId, gameSlug, level } = body ?? {};
   if (typeof clientSessionId !== "string" || clientSessionId.length < 8) {
     return badRequest("clientSessionId required");
   }
 
-  const topic = BY_ID[topicId];
-  const game = GAMES[topicId];
-  if (!topic || !game) return badRequest("unknown topic");
+  const game = GAME_BY_SLUG[gameSlug];
+  const topic = game ? BY_ID[game.topicId] : undefined;
+  if (!game || !topic) return badRequest("unknown game");
   if (!Number.isInteger(level) || level < 1 || level > topic.levels.length) {
     return badRequest("level out of range");
   }
@@ -45,7 +46,13 @@ export async function POST(request: Request) {
   // (person_id, client_session_id) makes a retried POST idempotent.
   await db
     .insert(gameSessions)
-    .values({ personId: gate.id, gameId: game.id, topicId, level, clientSessionId })
+    .values({
+      personId: gate.id,
+      gameId: game.slug,
+      topicId: game.topicId,
+      level,
+      clientSessionId,
+    })
     .onConflictDoNothing();
 
   const [row] = await db

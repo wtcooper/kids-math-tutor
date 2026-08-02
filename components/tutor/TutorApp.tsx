@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { BY_ID, GROUPS, TOPICS, topicsInGroup } from "@/lib/topics";
 import { ABOUT } from "@/lib/topics.about";
-import { GAMES } from "@/lib/games";
+import { gamesForTopic } from "@/lib/games";
 import { runtimeFor } from "@/lib/math/registry";
 import { buildWorksheet, type Worksheet } from "@/lib/math/worksheet";
 import type { FactKind } from "@/lib/math/facts";
@@ -132,7 +132,7 @@ export function TutorApp({
     requestAnimationFrame(() => requestAnimationFrame(() => window.print()));
   }, [topicId, level]);
 
-  const game = GAMES[topicId];
+  const games = gamesForTopic(topicId);
   // Deliberately not keyed on the mode: switching tabs keeps the current problem, the way
   // the original did (math-table.html:3626 sets S.mode and re-renders, it never calls
   // newProblem). Watching a problem worked and then trying that same one is the point.
@@ -152,11 +152,15 @@ export function TutorApp({
           <p className={styles.subtitle}>{topic.tagline}</p>
         </div>
         <div className={styles.topActions}>
-          {game ? (
-            <Link className="btn sage sm" href={`/play/${topicId}?level=${level}`}>
-              Play {game.name}
+          {games.map((g) => (
+            <Link
+              key={g.slug}
+              className="btn sage sm"
+              href={`/play/${g.slug}?level=${level}`}
+            >
+              Play {g.name}
             </Link>
-          ) : null}
+          ))}
           <button type="button" className="btn ghost" onClick={printWorksheet}>
             Print a worksheet
           </button>

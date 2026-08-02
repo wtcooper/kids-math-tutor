@@ -26,13 +26,17 @@ export function topicsInGroup(group: string): Topic[] {
   return TOPICS.filter((t) => t.group === group);
 }
 
+/**
+ * The tutor is one page with the topic in the query string, not a route per topic. It
+ * was a route per topic in the first pass of the rebuild, and links built the old way
+ * 404 silently — which is how a game's "Open in the tutor" button stayed broken.
+ */
 export function tutorHref(
   id: string,
   opts: { level?: number; mode?: string } = {},
 ): string {
-  const q = new URLSearchParams();
+  const q = new URLSearchParams({ topic: id });
   if (opts.level) q.set("level", String(opts.level));
   if (opts.mode) q.set("mode", opts.mode);
-  const s = q.toString();
-  return `/tutor/${id}${s ? `?${s}` : ""}`;
+  return `/tutor?${q.toString()}`;
 }

@@ -8,24 +8,25 @@ import { card, type FactKind } from "@/lib/math/facts";
 import { RoundEnd, type MissedFact } from "@/components/game/RoundEnd";
 import { GameChrome } from "@/components/game/GameChrome";
 import { useAttemptRecorder } from "@/components/game/useAttemptRecorder";
-
-interface Props {
-  topicId: string;
-  variant: string;
-  levels: readonly string[];
-  initialLevel: number;
-}
+import type { GameProps } from "../../GameHost";
 
 /** How many links before the round-end panel. Small enough to always be finishable. */
 const ROUND_LENGTH = 12;
 
-export default function Threading({ topicId, variant, levels, initialLevel }: Props) {
+export default function Threading({
+  slug,
+  topicId,
+  name,
+  variant,
+  levels,
+  initialLevel,
+}: GameProps) {
   const kind = (variant === "div" ? "div" : "mul") as FactKind;
   const [level, setLevel] = useState(initialLevel);
   const [roundOver, setRoundOver] = useState<MissedFact[] | null>(null);
   const busRef = useRef<GameBus | null>(null);
 
-  const recorder = useAttemptRecorder({ topicId, level });
+  const recorder = useAttemptRecorder({ gameSlug: slug, level });
 
   // Wrong pairs this round, keyed so a repeat does not list the same fact twice.
   const missesRef = useRef(new Map<string, MissedFact>());
@@ -80,7 +81,7 @@ export default function Threading({ topicId, variant, levels, initialLevel }: Pr
 
   return (
     <GameChrome
-      title="Threading"
+      title={name}
       topicId={topicId}
       levels={levels}
       level={level}

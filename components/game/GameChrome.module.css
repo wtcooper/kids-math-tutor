@@ -65,6 +65,25 @@
   font-weight: 600;
 }
 
+.headActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Live state — score, what is left. Sits directly above the board so the eye picks it up
+   without leaving the play area. */
+.status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  font-size: 0.86rem;
+  color: var(--ink2);
+}
+
 .stage {
   position: relative;
 }

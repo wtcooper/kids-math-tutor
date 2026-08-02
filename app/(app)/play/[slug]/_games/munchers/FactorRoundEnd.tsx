@@ -12,6 +12,8 @@ export interface FactorRoundResult {
   a: number;
   b?: number;
   eaten: number[];
+  yours: number;
+  grumps: number;
   gcf?: number;
 }
 
@@ -34,14 +36,25 @@ export function FactorRoundEnd({
   result: FactorRoundResult;
   onAgain: () => void;
 }) {
-  const { rule, a, b, eaten, gcf } = result;
+  const { rule, a, b, eaten, gcf, yours, grumps } = result;
   const showList = rule === "factors" || rule === "common";
   const list = showList ? factorsOf(a) : [];
 
   return (
     <div className={styles.scrim}>
       <div className={`card ${styles.panel}`}>
-        <h2 className={styles.title}>Board cleared</h2>
+        <h2 className={styles.title}>
+          {yours > grumps
+            ? "Board cleared — you won it"
+            : yours === grumps
+              ? "Board cleared — dead heat"
+              : "Board cleared"}
+        </h2>
+
+        <p className={local.tally}>
+          <span className={local.you}>You {yours}</span>
+          <span className={local.them}>Grumps {grumps}</span>
+        </p>
 
         {rule === "common" && gcf !== undefined ? (
           <p className={styles.lede}>

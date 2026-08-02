@@ -14,6 +14,11 @@ import type { GameBus, GameCommand } from "@/components/game/PhaserGame";
  * roamers walking toward you, never from a clock on the question. A wrong munch shakes
  * the cell once and costs nothing — no penalty, no sound, no counter movement.
  *
+ * **It is a race.** The Grumps eat the correct numbers too, on their own slow beat. That
+ * is what makes them mean something: in the first play-test they only chased, so there
+ * was no reason to hurry and no way to tell whether you were winning. Now every number
+ * you leave sitting is one they might take, and the round ends with a score you can read.
+ *
  * Level 4 is the good one. The rule is "common factors of a and b", the banner reads
  * GCF(a, b) = ?, and **the last one you eat is the GCF** — so the final move is the answer.
  */
@@ -35,6 +40,24 @@ const BERRY = 0xaf5c63;
 
 /** Roamer beat, in ms. Deliberately slow — this is pressure, not a reflex test. */
 const BEAT = 900;
+/**
+ * Beats a Grump must sit on a correct number before it eats it. Long enough that she can
+ * always beat one to the square she is next to, so losing a number is a decision she
+ * made, not a dice roll.
+ */
+const GRUMP_CHEW = 2;
+/**
+ * Quiet time at the start of a round, in ms. She gets to read the rule and the board
+ * before anything can be taken from her — otherwise numbers vanish while she is still
+ * working out what the round is asking, which reads as the game cheating.
+ */
+const GRACE_MS = 2600;
+
+/**
+ * The fewest eatable numbers a rule must be able to put on the board. Below this the
+ * round is either trivial or, for a prime, literally unwinnable.
+ */
+export const MIN_TARGETS = 4;
 
 export type RuleKind = "multiples" | "factors" | "primes" | "common";
 
@@ -79,7 +102,15 @@ export function makeRule(level: number, rnd: (a: number, b: number) => number): 
     };
   }
   if (kind === "factors") {
-    const a = rnd(lo * 2, hi);
+    // A prime here is an unwinnable board: "eat the factors of 61" has nothing on it to
+    // eat, because 1 and the number itself are excluded from the pool. Insist on a number
+    // with enough factors to fill a board worth playing.
+    let a = rnd(lo * 2, hi);
+    let guard = 0;
+    while (factorsOf(a).filter((n) => n > 1).length < MIN_TARGETS && guard++ < 80) {
+      a = rnd(lo * 2, hi);
+    }
+    if (factorsOf(a).filter((n) => n > 1).length < MIN_TARGETS) a = 48;
     return {
       kind,
       a,
@@ -91,9 +122,16 @@ export function makeRule(level: number, rnd: (a: number, b: number) => number): 
   let a = rnd(lo * 2, hi);
   let b = rnd(lo * 2, hi);
   let guard = 0;
-  while ((a === b || gcd(a, b) < 3) && guard++ < 60) {
+  while (
+    (a === b || commonFactors(a, b).filter((n) => n > 1).length < MIN_TARGETS) &&
+    guard++ < 80
+  ) {
     a = rnd(lo * 2, hi);
     b = rnd(lo * 2, hi);
+  }
+  if (commonFactors(a, b).filter((n) => n > 1).length < MIN_TARGETS) {
+    a = 48;
+    b = 36;
   }
   return {
     kind,
@@ -102,6 +140,22 @@ export function makeRule(level: number, rnd: (a: number, b: number) => number): 
     label: `GCF(${a}, ${b}) = ?  ·  eat what divides both`,
     satisfies: (n) => a % n === 0 && b % n === 0,
   };
+}
+
+/**
+ * Everything this rule could legitimately put on the board. Exported and pure so the
+ * "no unwinnable board" invariant can be tested without a browser.
+ */
+export function answersFor(rule: Rule): number[] {
+  const { kind, a, b } = rule;
+  if (kind === "primes") return [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37];
+  if (kind === "multiples") {
+    const out: number[] = [];
+    for (let i = 1; i * a <= 99; i++) out.push(i * a);
+    return out;
+  }
+  if (kind === "factors") return factorsOf(a).filter((n) => n > 1);
+  return commonFactors(a, b!).filter((n) => n > 1);
 }
 
 interface Cell {
@@ -115,6 +169,8 @@ interface Roamer {
   col: number;
   row: number;
   obj: Phaser.GameObjects.Container;
+  /** Beats spent sitting on the current correct number. */
+  chewing: number;
 }
 
 export function createGridScene(P: typeof Phaser, config: { level: number }) {
@@ -133,6 +189,8 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
     private beatAcc = 0;
     private askedAt = 0;
     private eatenTargets: number[] = [];
+    private grumpScore = 0;
+    private graceUntil = 0;
 
     constructor() {
       super("grid");
@@ -158,11 +216,19 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
         })
         .setOrigin(0.5);
 
+      // A ring *and* a face. The ring alone read as a cursor, so it was not obvious which
+      // thing on the board was her.
       this.player = this.add.container(0, 0);
       const pg = this.add.graphics();
       pg.lineStyle(3, CLAY, 1);
       pg.strokeRoundedRect(-CELL_W / 2 + 4, -CELL_H / 2 + 4, CELL_W - 8, CELL_H - 8, 12);
+      pg.fillStyle(CLAY, 1);
+      pg.fillCircle(-CELL_W / 2 + 20, -CELL_H / 2 + 18, 11);
+      pg.fillStyle(PAPER, 1);
+      pg.fillCircle(-CELL_W / 2 + 16, -CELL_H / 2 + 15, 3);
+      pg.fillCircle(-CELL_W / 2 + 24, -CELL_H / 2 + 15, 3);
       this.player.add(pg);
+      this.player.setDepth(5);
 
       // Pointer-first: tap an adjacent cell to step, tap your own cell to munch.
       this.input.on("pointerdown", (p: Phaser.Input.Pointer) => this.onTap(p));
@@ -195,6 +261,7 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
       this.roamers = [];
       this.cells = [];
       this.eatenTargets = [];
+      this.grumpScore = 0;
 
       this.rule = makeRule(this.level, this.rnd);
       this.banner.setText(this.rule.label);
@@ -231,20 +298,28 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
       for (let i = 0; i < roamerCount; i++) this.addRoamer();
 
       this.askedAt = this.time.now;
+      this.graceUntil = this.time.now + GRACE_MS;
+      // Zeroed here too: a slow first frame after page load banks a large delta, which
+      // let several beats fire back to back and cost her numbers before she had moved.
+      this.beatAcc = 0;
+      this.pushState();
+    }
+
+    /** Live HUD state. Cheap, and only ever read — never persisted. */
+    private pushState() {
+      this.bus.emit({
+        type: "state",
+        payload: {
+          rule: this.rule.label,
+          yours: this.eatenTargets.length,
+          grumps: this.grumpScore,
+          left: this.remainingTargets(),
+        },
+      });
     }
 
     private answerPool(): number[] {
-      const { kind, a, b } = this.rule;
-      if (kind === "primes") {
-        return [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37];
-      }
-      if (kind === "multiples") {
-        const out: number[] = [];
-        for (let i = 1; i * a <= 99; i++) out.push(i * a);
-        return out;
-      }
-      if (kind === "factors") return factorsOf(a).filter((n) => n > 1);
-      return commonFactors(a, b!).filter((n) => n > 1);
+      return answersFor(this.rule);
     }
 
     private makeCell(c: number, r: number, n: number): Cell {
@@ -335,6 +410,7 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
         },
       });
 
+      this.pushState();
       if (this.remainingTargets() === 0) this.completeRound();
     }
 
@@ -357,6 +433,8 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
           a,
           b,
           eaten: [...this.eatenTargets].sort((x, y) => x - y),
+          yours: this.eatenTargets.length,
+          grumps: this.grumpScore,
           // For the GCF round the largest eaten value IS the answer — the last move.
           gcf: kind === "common" ? gcd(a, b!) : undefined,
         },
@@ -374,7 +452,7 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
       g.fillCircle(-4, -3, 2.6);
       g.fillCircle(4, -3, 2.6);
       obj.add(g);
-      const r: Roamer = { col: this.rnd(0, COLS - 1), row: 0, obj };
+      const r: Roamer = { col: this.rnd(0, COLS - 1), row: 0, obj, chewing: 0 };
       this.roamers.push(r);
       this.placeRoamer(r);
     }
@@ -387,22 +465,78 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
     }
 
     private moveRoamers() {
+      let ateSomething = false;
+
       for (const r of this.roamers) {
-        // Mild bias toward her, so pressure builds without becoming a chase.
-        const towards = Math.random() < 0.45;
-        if (towards) {
-          if (r.col !== this.col) r.col += r.col < this.col ? 1 : -1;
-          else if (r.row !== this.row) r.row += r.row < this.row ? 1 : -1;
-        } else {
-          if (Math.random() < 0.5) r.col += Math.random() < 0.5 ? 1 : -1;
-          else r.row += Math.random() < 0.5 ? 1 : -1;
+        // Sitting on an uneaten answer? Chew it. This is the race: a number left alone
+        // for two beats is a number the Grumps take off the board.
+        const grace = this.time.now < this.graceUntil;
+        const here = this.cellAt(r.col, r.row);
+        if (!grace && here && !here.eaten && this.rule.satisfies(here.n)) {
+          r.chewing++;
+          if (r.chewing >= GRUMP_CHEW) {
+            r.chewing = 0;
+            this.grumpEat(here);
+            ateSomething = true;
+            continue;
+          }
+          // Stay put while chewing, so she can see where the threat is and get there.
+          continue;
         }
+        r.chewing = 0;
+
+        // Head for the nearest number they can eat; only sometimes toward her. Chasing was
+        // all they used to do, and it gave her no reason to hurry.
+        const prey = this.nearestTarget(r.col, r.row);
+        const goal = prey && Math.random() < 0.7 ? prey : { col: this.col, row: this.row };
+
+        if (r.col !== goal.col) r.col += r.col < goal.col ? 1 : -1;
+        else if (r.row !== goal.row) r.row += r.row < goal.row ? 1 : -1;
+
         r.col = Math.min(COLS - 1, Math.max(0, r.col));
         r.row = Math.min(ROWS - 1, Math.max(0, r.row));
         this.placeRoamer(r);
 
         if (r.col === this.col && r.row === this.row) this.caught();
       }
+
+      if (ateSomething) {
+        this.pushState();
+        if (this.remainingTargets() === 0) this.completeRound();
+      }
+    }
+
+    private nearestTarget(col: number, row: number): { col: number; row: number } | null {
+      let best: { col: number; row: number } | null = null;
+      let bestD = Infinity;
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const cell = this.cellAt(c, r);
+          if (!cell || cell.eaten || !this.rule.satisfies(cell.n)) continue;
+          const d = Math.abs(c - col) + Math.abs(r - row);
+          if (d < bestD) {
+            bestD = d;
+            best = { col: c, row: r };
+          }
+        }
+      }
+      return best;
+    }
+
+    private grumpEat(cell: Cell) {
+      cell.eaten = true;
+      this.grumpScore++;
+      cell.text.setColor("#A05560");
+      this.tweens.add({
+        targets: [cell.text],
+        alpha: 0,
+        scale: 0.6,
+        duration: 240,
+        onComplete: () => {
+          cell.text.setVisible(false);
+          cell.bg.setAlpha(0.25);
+        },
+      });
     }
 
     /** Instant respawn at centre. Board unchanged, nothing lost. */

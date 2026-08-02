@@ -17,7 +17,8 @@ import type { GameEvent } from "./PhaserGame";
  */
 
 interface Options {
-  topicId: string;
+  /** The game's route slug — several games can share a topic. */
+  gameSlug: string;
   level: number;
 }
 
@@ -33,7 +34,7 @@ function uuid(): string {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-export function useAttemptRecorder({ topicId, level }: Options) {
+export function useAttemptRecorder({ gameSlug, level }: Options) {
   const bufferRef = useRef<PendingAttempt[]>([]);
   const seqRef = useRef(0);
   const sessionIdRef = useRef<string | null>(null);
@@ -48,7 +49,7 @@ export function useAttemptRecorder({ topicId, level }: Options) {
     clientSessionIdRef.current = uuid();
     seqRef.current = 0;
     bufferRef.current = [];
-  }, [topicId, level]);
+  }, [gameSlug, level]);
 
   const openSession = useCallback(async (): Promise<string | null> => {
     if (sessionIdRef.current) return sessionIdRef.current;
@@ -56,7 +57,7 @@ export function useAttemptRecorder({ topicId, level }: Options) {
     if (!openingRef.current) {
       openingRef.current = postJson<{ sessionId: string }>("/api/sessions", {
         clientSessionId: clientSessionIdRef.current,
-        topicId,
+        gameSlug,
         level,
       })
         .then((r) => {
@@ -72,7 +73,7 @@ export function useAttemptRecorder({ topicId, level }: Options) {
         });
     }
     return openingRef.current;
-  }, [topicId, level]);
+  }, [gameSlug, level]);
 
   const record = useCallback(
     (e: GameEvent) => {

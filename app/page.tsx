@@ -9,13 +9,6 @@ export const metadata: Metadata = {
   title: "The Math Table",
 };
 
-/** Short pitch per game — what the mechanic actually is, not what it drills. */
-const BLURBS: Record<string, string> = {
-  "facts-mul": "Numbers drift past in lanes. Draw a line between two that make the target.",
-  "facts-div": "Same lanes, run backwards — link a number to what divides it.",
-  factors: "Move around the grid and eat only the numbers that fit the rule.",
-};
-
 export default async function LandingPage() {
   // Enforced here, at the page, rather than only in a layout: a layout's children can
   // begin rendering before its redirect lands, which puts content into the RSC payload.
@@ -23,12 +16,13 @@ export default async function LandingPage() {
 
   const levelCount = TOPICS.reduce((n, t) => n + t.levels.length, 0);
 
-  // Games grouped by the same domains the tutor uses, so the sections line up.
-  const gameIds = Object.keys(GAMES);
+  // Games grouped by the same domains the tutor uses, so the sections line up. One card
+  // per game, not per topic — Munchers and Split both teach factors and are not the same
+  // thing to play.
   const sections = GROUPS.map((group) => ({
     group,
-    ids: gameIds.filter((id) => BY_ID[id]?.group === group),
-  })).filter((s) => s.ids.length > 0);
+    games: GAMES.filter((g) => BY_ID[g.topicId]?.group === group),
+  })).filter((s) => s.games.length > 0);
 
   return (
     <main className="wrap">
@@ -66,29 +60,34 @@ export default async function LandingPage() {
 
       <div className={styles.gamesHead}>
         <h2 className={styles.groupName}>Games</h2>
-        <span className={styles.groupCount}>
-          {gameIds.length} to play — more coming
-        </span>
+        <span className={styles.groupCount}>{GAMES.length} to play</span>
       </div>
 
-      {sections.map(({ group, ids }) => (
+      {sections.map(({ group, games }) => (
         <section key={group} className={styles.group}>
           <h3 className={styles.domain}>{group}</h3>
           <div className={styles.grid}>
-            {ids.map((id) => {
-              const game = GAMES[id];
-              const topic = BY_ID[id];
-              return (
-                <Link key={id} href={`/play/${id}`} className={`card ${styles.gameCard}`}>
-                  <div className={styles.gameHead}>
-                    <h4 className={styles.gameName}>{game.cardName}</h4>
-                    <span className={styles.playBadge}>Play</span>
-                  </div>
-                  <p className={styles.gameBlurb}>{BLURBS[id] ?? topic.tagline}</p>
-                  <span className={styles.gameTopic}>{topic.name}</span>
-                </Link>
-              );
-            })}
+            {games.map((game) => (
+              <Link
+                key={game.slug}
+                href={`/play/${game.slug}`}
+                className={`card ${styles.gameCard}`}
+              >
+                <div className={styles.gameHead}>
+                  <h4 className={styles.gameName}>{game.name}</h4>
+                  <span className={styles.playBadge}>Play</span>
+                </div>
+                <p className={styles.gameBlurb}>{game.blurb}</p>
+                <span className={styles.gameFoot}>
+                  <span className={styles.gameTopic}>{BY_ID[game.topicId].name}</span>
+                  <span
+                    className={`${styles.focus} ${game.focus === "fluency" ? styles.fluency : styles.understanding}`}
+                  >
+                    {game.focus === "fluency" ? "Get faster" : "See why"}
+                  </span>
+                </span>
+              </Link>
+            ))}
           </div>
         </section>
       ))}

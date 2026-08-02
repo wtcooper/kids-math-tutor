@@ -1,39 +1,72 @@
 /**
- * Which topics have a game, and which game.
+ * Which games exist, what each one teaches, and how it is routed.
  *
  * Kept deliberately free of any Phaser import — this is consumed by the landing page,
  * a Server Component. Importing the engine here is exactly how a 1.2MB dependency ends
  * up in the shared client chunk.
+ *
+ * `slug` and `impl` are separate on purpose. Crossing serves multiplication facts and
+ * division facts from one implementation, and several games will teach `factors` — so
+ * neither the route nor the topic can be the identity of a game.
  */
 
-export type GameId = "threading" | "munchers";
+/** The component that gets dynamically imported. Several games may share one. */
+export type GameImpl = "crossing" | "munchers";
 
 export interface GameMeta {
-  id: GameId;
-  /** The game itself. Two topics can share one game. */
+  /** Route: /play/<slug>. Stable — it is what her bookmarks point at. */
+  slug: string;
+  impl: GameImpl;
   name: string;
-  /** How the card is titled — Threading serves two topics, so they need telling apart. */
-  cardName: string;
-  /** Passed to the game so one implementation can serve several topics. */
+  /** The tutor topic it teaches. Drives the level names and "Open in the tutor". */
+  topicId: string;
+  /** What the mechanic actually is, not what it drills. */
+  blurb: string;
+  /**
+   * Which half of the open question in plan 02 this one serves. Shown as a chip so the
+   * difference between "get faster" and "see why" is visible before she commits.
+   */
+  focus: "fluency" | "understanding";
+  /** Lets one implementation serve several games. */
   variant?: string;
 }
 
-export const GAMES: Readonly<Record<string, GameMeta>> = {
-  "facts-mul": {
-    id: "threading",
-    name: "Threading",
-    cardName: "Threading — times tables",
+export const GAMES: readonly GameMeta[] = [
+  {
+    slug: "crossing-mul",
+    impl: "crossing",
+    name: "Crossing",
+    topicId: "facts-mul",
+    blurb:
+      "Hop the river on drifting stones. Only the multiples hold your weight — the rest sink.",
+    focus: "fluency",
     variant: "mul",
   },
-  "facts-div": {
-    id: "threading",
-    name: "Threading",
-    cardName: "Threading — division facts",
+  {
+    slug: "crossing-div",
+    impl: "crossing",
+    name: "Crossing — division",
+    topicId: "facts-div",
+    blurb:
+      "Same river, other question: a stone holds you only if its number divides the target exactly.",
+    focus: "fluency",
     variant: "div",
   },
-  factors: { id: "munchers", name: "Munchers", cardName: "Munchers" },
-};
+  {
+    slug: "munchers",
+    impl: "munchers",
+    name: "Munchers",
+    topicId: "factors",
+    blurb: "Move around the grid and eat only the numbers that fit the rule.",
+    focus: "fluency",
+  },
+];
 
-export function gameFor(topicId: string): GameMeta | undefined {
-  return GAMES[topicId];
+export const GAME_BY_SLUG: Readonly<Record<string, GameMeta>> = Object.fromEntries(
+  GAMES.map((g) => [g.slug, g]),
+);
+
+/** Every game that teaches a topic — the tutor shows these as Play buttons. */
+export function gamesForTopic(topicId: string): GameMeta[] {
+  return GAMES.filter((g) => g.topicId === topicId);
 }

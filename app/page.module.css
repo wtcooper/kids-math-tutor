@@ -201,4 +201,12 @@
 .gameHead { display:flex; align-items:center; justify-content:space-between; gap:8px }
 .gameName { font-size:1.05rem; margin:0 }
 .gameBlurb { margin:0; color:var(--ink2); font-size:.88rem; flex:1 }
-.gameTopic { font-size:.74rem; color:var(--ink3); margin-top:auto }
+.gameFoot { display:flex; align-items:center; justify-content:space-between; gap:8px;
+  margin-top:auto; padding-top:10px }
+.gameTopic { font-size:.74rem; color:var(--ink3) }
+
+/* "Get faster" vs "See why" — the two things a game can be for, said plainly. */
+.focus { font-size:.68rem; letter-spacing:.02em; padding:2px 8px; border-radius:999px;
+  white-space:nowrap; border:1px solid transparent }
+.fluency { color:#8a5a2b; background:#f6ead9; border-color:#e8d5ba }
+.understanding { color:#3f6b52; background:#e4efe6; border-color:#c9dfd0 }

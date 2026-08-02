@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { tutorHref } from "@/lib/topics";
+import { HowToPlay, type HowTo } from "./HowToPlay";
 import styles from "./GameChrome.module.css";
 
 /**
@@ -10,22 +11,34 @@ import styles from "./GameChrome.module.css";
  * Level *names* rather than numbers, and they are the tutor's own strings — so
  * "Sevens, eights & nines — the hard ones" reads identically in the game and in the
  * tutor, and nothing anywhere shows a grade or an age.
+ *
+ * `howTo` is required, not optional. The first play-test failed because three finished
+ * games gave no indication of what to do; making the explanation part of the frame is how
+ * that stops being possible.
  */
 export function GameChrome({
+  slug,
   title,
   topicId,
   levels,
   level,
   onLevel,
   instructions,
+  howTo,
+  status,
   children,
 }: {
+  slug: string;
   title: string;
   topicId: string;
   levels: readonly string[];
   level: number;
   onLevel: (level: number) => void;
+  /** The one-line reminder that stays on screen the whole time. */
   instructions: string;
+  howTo: HowTo;
+  /** Live state — score, what's left, whose turn. Rendered beside the instructions. */
+  status?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -38,9 +51,12 @@ export function GameChrome({
           <h1 className={styles.title}>{title}</h1>
           <p className={styles.instructions}>{instructions}</p>
         </div>
-        <Link className="btn sm" href={tutorHref(topicId, { level })}>
-          Open in the tutor
-        </Link>
+        <div className={styles.headActions}>
+          <HowToPlay slug={slug} title={title} howTo={howTo} />
+          <Link className="btn sm" href={tutorHref(topicId, { level })}>
+            Open in the tutor
+          </Link>
+        </div>
       </header>
 
       <div className={styles.levels}>
@@ -58,6 +74,8 @@ export function GameChrome({
           );
         })}
       </div>
+
+      {status ? <div className={styles.status}>{status}</div> : null}
 
       <div className={styles.stage}>{children}</div>
 

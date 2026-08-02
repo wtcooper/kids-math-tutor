@@ -27,6 +27,8 @@ import styles from "./PhaserGame.module.css";
 
 export type GameEvent =
   | { type: "attempt"; prompt: unknown; response: unknown; elapsedMs: number }
+  /** Live board state for the HUD — score, what is left. Never persisted. */
+  | { type: "state"; payload: unknown }
   | { type: "round:complete"; payload: unknown }
   | { type: "session:end" };
 
@@ -55,6 +57,8 @@ function makeBus(onEvent: (e: GameEvent) => void): GameBus {
     },
   };
 }
+
+type HostWithGame = HTMLDivElement & { __phaserGame?: Phaser.Game };
 
 export interface PhaserGameProps {
   /** Built lazily so the Phaser module is only imported inside the effect. */
@@ -97,11 +101,17 @@ export function PhaserGame({ createScenes, onEvent, busRef }: PhaserGameProps) {
 
       game.registry.set("bus", bus);
       gameRef.current = game;
+      // Automation seam. A canvas has no DOM to query, so without a handle on the running
+      // game there is no way to test a game's *rules* in a browser — only to take
+      // screenshots and guess. Hung off the host element rather than `window` so it
+      // cannot collide with anything and dies with the component.
+      (hostRef.current as HostWithGame).__phaserGame = game;
     })();
 
     return () => {
       cancelled = true;
       if (busRef) busRef.current = null;
+      if (hostRef.current) delete (hostRef.current as HostWithGame).__phaserGame;
       const g = gameRef.current;
       gameRef.current = null;
       if (!g) return;

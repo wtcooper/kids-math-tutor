@@ -1,3 +1,18 @@
+.tally {
+  display: flex;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+.tally span {
+  border-radius: 999px;
+  padding: 3px 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+.you { background: var(--clay-s); border-color: #e6c3ae; color: var(--clay-d) }
+.them { background: #f4e3e5; border-color: #e6c8cc; color: #8c4750 }
+
 .factorLine {
   display: flex;
   gap: 8px;

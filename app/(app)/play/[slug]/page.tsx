@@ -2,27 +2,27 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { requireAllowedPerson } from "@/lib/auth/person";
 import { BY_ID } from "@/lib/topics";
-import { GAMES } from "@/lib/games";
+import { GAME_BY_SLUG } from "@/lib/games";
 import { GameHost } from "./GameHost";
 
 interface Props {
-  params: Promise<{ topicId: string }>;
+  params: Promise<{ slug: string }>;
   searchParams: Promise<{ level?: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { topicId } = await params;
-  const game = GAMES[topicId];
+  const { slug } = await params;
+  const game = GAME_BY_SLUG[slug];
   return { title: game ? `${game.name} — The Math Table` : "The Math Table" };
 }
 
 export default async function PlayPage({ params, searchParams }: Props) {
   await requireAllowedPerson();
 
-  const { topicId } = await params;
-  const topic = BY_ID[topicId];
-  const game = GAMES[topicId];
-  if (!topic || !game) notFound();
+  const { slug } = await params;
+  const game = GAME_BY_SLUG[slug];
+  const topic = game ? BY_ID[game.topicId] : undefined;
+  if (!game || !topic) notFound();
 
   const { level } = await searchParams;
   const parsed = Number(level);
@@ -31,11 +31,16 @@ export default async function PlayPage({ params, searchParams }: Props) {
 
   return (
     <GameHost
-      gameId={game.id}
+      impl={game.impl}
+      slug={game.slug}
+      name={game.name}
       variant={game.variant ?? ""}
-      topicId={topicId}
+      topicId={game.topicId}
       levels={topic.levels}
       initialLevel={initialLevel}
+      // The puzzle games generate their own boards; the seed keeps the server render and
+      // the client hydration agreeing on the first one. Same fix as the tutor.
+      seed={Math.floor(Math.random() * 2 ** 31)}
     />
   );
 }
