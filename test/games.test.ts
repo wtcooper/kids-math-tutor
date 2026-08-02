@@ -67,10 +67,16 @@ import {
 } from "../app/(app)/play/[slug]/_games/machine/machine-model";
 import {
   bestProfit,
+  CUPS_PER_POUND,
+  cupsIn,
+  flourText,
   genDay,
   maxTrays,
-  pence,
+  money,
+  rateText,
+  sackText,
   simulate,
+  unitRate,
 } from "../app/(app)/play/[slug]/_games/bakery/bakery-model";
 
 const LEVELS = [1, 2, 3, 4];
@@ -587,8 +593,9 @@ describe("The Bakery", () => {
       const day = genDay(3, rnd);
       const r = simulate(day, { offerIndex: 0, trays: 2, markupIndex: 0, clearance: true });
       for (const v of [r.flourCost, r.costPerBun, r.price, r.salePrice, r.revenue, r.profit]) {
-        expect(Number.isInteger(v), `${v} is not whole pence`).toBe(true);
+        expect(Number.isInteger(v), `${v} is not whole cents`).toBe(true);
       }
+      expect(Number.isInteger(r.cupsUsed), "cups must be whole").toBe(true);
     }
   });
 
@@ -603,11 +610,48 @@ describe("The Bakery", () => {
     expect(r.metTarget).toBe(false);
   });
 
-  it("formats money without float dust", () => {
-    expect(pence(0)).toBe("£0.00");
-    expect(pence(5)).toBe("£0.05");
-    expect(pence(460)).toBe("£4.60");
-    expect(pence(1234)).toBe("£12.34");
-    expect(pence(-250)).toBe("−£2.50");
+  it("formats money in dollars without float dust", () => {
+    expect(money(0)).toBe("$0.00");
+    expect(money(5)).toBe("$0.05");
+    expect(money(460)).toBe("$4.60");
+    expect(money(1234)).toBe("$12.34");
+    expect(money(-250)).toBe("−$2.50");
+  });
+
+  it("says the same amount of flour in either unit system", () => {
+    // The toggle must restate, never restate-and-change. A tray is a tray.
+    for (let level = 1; level <= 4; level++) {
+      for (let s = 0; s < 40; s++) {
+        const rand = mulberry32(25000 + s);
+        const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+        const day = genDay(level, rnd);
+        for (const o of day.offers) {
+          // A sack holds a whole number of cups, so trays never come out fractional.
+          expect(Number.isInteger(cupsIn(o))).toBe(true);
+          expect(cupsIn(o)).toBe(o.pounds * CUPS_PER_POUND);
+          expect(sackText(o, "us")).toContain("lb");
+          expect(rateText(o, "us")).toContain("per lb");
+          expect(rateText(o, "metric")).toContain("per kg");
+        }
+        expect(flourText(day.cupsPerTray, "us")).toContain("cup");
+        expect(flourText(day.cupsPerTray, "metric")).toContain("g");
+        // Whichever units are shown, the tray count is the same.
+        expect(maxTrays(day, day.offers[0])).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("the cheapest sack per pound is also the cheapest per kilo", () => {
+    // If the toggle could flip which sack looks better, it would teach the wrong thing.
+    for (let s = 0; s < 200; s++) {
+      const rand = mulberry32(26000 + s);
+      const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+      const day = genDay(3, rnd);
+      const byPound = [...day.offers].sort((a, b) => unitRate(a) - unitRate(b));
+      const perKilo = (o: (typeof day.offers)[number]) =>
+        o.cents / ((o.pounds * CUPS_PER_POUND * 120) / 1000);
+      const byKilo = [...day.offers].sort((a, b) => perKilo(a) - perKilo(b));
+      expect(byKilo[0]).toEqual(byPound[0]);
+    }
   });
 });

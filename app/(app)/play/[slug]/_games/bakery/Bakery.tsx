@@ -10,11 +10,17 @@ import { tutorHref } from "@/lib/topics";
 import type { GameProps } from "../../GameHost";
 import {
   bestOffer,
+  CUPS_PER_POUND,
+  flourText,
   genDay,
+  GRAMS_PER_CUP,
   maxTrays,
-  pence,
+  money,
+  rateText,
+  sackText,
   simulate,
   unitRate,
+  type Units,
 } from "./bakery-model";
 import styles from "./Bakery.module.css";
 
@@ -26,15 +32,17 @@ const HOW_TO: HowTo = {
   ],
   rules: [
     "Nothing here is marked right or wrong. The till just tells you what happened.",
-    "The bigger sack is usually cheaper per kilo — but not always. Work it out.",
-    "Charge more and you make more per bun, but fewer people buy.",
+    "The bigger sack is usually cheaper per pound — but not always. Work it out.",
+    "Charge more and you make more per roll, but fewer people buy.",
     "Flour you buy and do not bake with is money left in the sack.",
+    "The cups/grams switch restates everything in metric. The sums come out the same.",
   ],
 };
 
 export default function Bakery({ slug, topicId, name, levels, initialLevel, seed }: GameProps) {
   const [level, setLevel] = useState(initialLevel);
   const [nonce, setNonce] = useState(0);
+  const [units, setUnits] = useState<Units>("us");
   const recorder = useAttemptRecorder({ gameSlug: slug, level });
 
   const day = useMemo(() => {
@@ -100,9 +108,25 @@ export default function Bakery({ slug, topicId, name, levels, initialLevel, seed
       howTo={HOW_TO}
       status={
         <>
-          <span className={styles.pip}>Today&rsquo;s target: {pence(day.target)} profit</span>
+          <span className={styles.pip}>Today&rsquo;s target: {money(day.target)} profit</span>
           <span className={styles.soft}>
-            {day.gramsPerTray} g per tray · {day.bunsPerTray} buns per tray
+            {flourText(day.cupsPerTray, units)} per tray · {day.bunsPerTray} rolls per tray
+          </span>
+          <span className={styles.toggle}>
+            <button
+              type="button"
+              className={units === "us" ? styles.unitOn : styles.unitOff}
+              onClick={() => setUnits("us")}
+            >
+              cups &amp; lb
+            </button>
+            <button
+              type="button"
+              className={units === "metric" ? styles.unitOn : styles.unitOff}
+              onClick={() => setUnits("metric")}
+            >
+              grams
+            </button>
           </span>
         </>
       }
@@ -122,12 +146,17 @@ export default function Bakery({ slug, topicId, name, levels, initialLevel, seed
                 }}
                 disabled={sold}
               >
-                <span className={styles.offerSize}>{o.grams / 1000} kg</span>
-                <span className={styles.offerPrice}>{pence(o.pence)}</span>
-                <span className={styles.offerRate}>{pence(unitRate(o))} per kg</span>
+                <span className={styles.offerSize}>{sackText(o, units)}</span>
+                <span className={styles.offerPrice}>{money(o.cents)}</span>
+                <span className={styles.offerRate}>{rateText(o, units)}</span>
               </button>
             ))}
           </div>
+          <p className={styles.conv}>
+            {units === "us"
+              ? `1 lb of flour is about ${CUPS_PER_POUND} cups, so the ${cheapest.pounds} lb sack holds ${cheapest.pounds * CUPS_PER_POUND} cups.`
+              : `1 cup of flour is about ${GRAMS_PER_CUP} g — that is the only conversion here.`}
+          </p>
         </section>
 
         <section className={styles.step}>
@@ -152,13 +181,16 @@ export default function Bakery({ slug, topicId, name, levels, initialLevel, seed
               +
             </button>
             <span className={styles.calc}>
-              {safeTrays} × {day.gramsPerTray} g = {result.gramsUsed} g used
-              {result.gramsWasted > 0 ? ` · ${result.gramsWasted} g left in the sack` : ""}
+              {safeTrays} × {flourText(day.cupsPerTray, units)} = {flourText(result.cupsUsed, units)}{" "}
+              used
+              {result.cupsWasted > 0
+                ? ` · ${flourText(result.cupsWasted, units)} left in the sack`
+                : ""}
             </span>
           </div>
           <p className={styles.made}>
-            {safeTrays} × {day.bunsPerTray} = <strong>{result.bunsMade} buns</strong> ·{" "}
-            {pence(result.totalCost)} spent, so {pence(result.costPerBun)} each to make
+            {safeTrays} × {day.bunsPerTray} = <strong>{result.bunsMade} rolls</strong> ·{" "}
+            {money(result.totalCost)} spent, so {money(result.costPerBun)} each to make
           </p>
         </section>
 
@@ -166,7 +198,12 @@ export default function Bakery({ slug, topicId, name, levels, initialLevel, seed
           <h3 className={styles.h3}>3 · Set the price</h3>
           <div className={styles.markups}>
             {day.markups.map((m, i) => {
-              const preview = simulate(day, { offerIndex, trays: safeTrays, markupIndex: i, clearance });
+              const preview = simulate(day, {
+                offerIndex,
+                trays: safeTrays,
+                markupIndex: i,
+                clearance,
+              });
               return (
                 <button
                   key={m}
@@ -176,14 +213,14 @@ export default function Bakery({ slug, topicId, name, levels, initialLevel, seed
                   disabled={sold}
                 >
                   <span className={styles.markupPct}>+{m}%</span>
-                  <span className={styles.markupPrice}>{pence(preview.price)} each</span>
+                  <span className={styles.markupPrice}>{money(preview.price)} each</span>
                 </button>
               );
             })}
           </div>
           <p className={styles.calc}>
-            {pence(result.costPerBun)} + {day.markups[markupIndex]}% ={" "}
-            <strong>{pence(result.price)}</strong>
+            {money(result.costPerBun)} + {day.markups[markupIndex]}% ={" "}
+            <strong>{money(result.price)}</strong>
           </p>
         </section>
 
@@ -197,7 +234,7 @@ export default function Bakery({ slug, topicId, name, levels, initialLevel, seed
               disabled={sold}
             />
             <span>
-              Sell what is left at {day.clearanceOff}% off — {pence(result.salePrice)} each
+              Sell what is left at {day.clearanceOff}% off — {money(result.salePrice)} each
             </span>
           </label>
         </section>
@@ -219,27 +256,27 @@ export default function Bakery({ slug, topicId, name, levels, initialLevel, seed
                 <tbody>
                   <tr>
                     <td>Flour</td>
-                    <td className={styles.money}>−{pence(result.flourCost)}</td>
+                    <td className={styles.money}>−{money(result.flourCost)}</td>
                   </tr>
                   <tr>
                     <td>
                       Butter, sugar, oven — {safeTrays} tray{safeTrays === 1 ? "" : "s"}
                     </td>
-                    <td className={styles.money}>−{pence(result.otherCost)}</td>
+                    <td className={styles.money}>−{money(result.otherCost)}</td>
                   </tr>
                   <tr>
                     <td>
-                      Sold {result.sold} at {pence(result.price)}
+                      Sold {result.sold} at {money(result.price)}
                     </td>
-                    <td className={styles.money}>{pence(result.sold * result.price)}</td>
+                    <td className={styles.money}>{money(result.sold * result.price)}</td>
                   </tr>
                   {result.clearanceSold > 0 ? (
                     <tr>
                       <td>
-                        {result.clearanceSold} more at {pence(result.salePrice)}
+                        {result.clearanceSold} more at {money(result.salePrice)}
                       </td>
                       <td className={styles.money}>
-                        {pence(result.clearanceSold * result.salePrice)}
+                        {money(result.clearanceSold * result.salePrice)}
                       </td>
                     </tr>
                   ) : null}
@@ -252,7 +289,7 @@ export default function Bakery({ slug, topicId, name, levels, initialLevel, seed
                   <tr className={styles.total}>
                     <td>Profit</td>
                     <td className={result.metTarget ? styles.good : styles.bad}>
-                      {pence(result.profit)}
+                      {money(result.profit)}
                     </td>
                   </tr>
                 </tbody>
@@ -260,10 +297,10 @@ export default function Bakery({ slug, topicId, name, levels, initialLevel, seed
 
               <p className={styles.note}>
                 {result.metTarget
-                  ? `Target was ${pence(day.target)}.`
-                  : `Target was ${pence(day.target)}. ` +
+                  ? `Target was ${money(day.target)}.`
+                  : `Target was ${money(day.target)}. ` +
                     (unitRate(day.offers[offerIndex]) > unitRate(cheapest)
-                      ? `The ${cheapest.grams / 1000} kg sack was ${pence(unitRate(day.offers[offerIndex]) - unitRate(cheapest))} cheaper per kilo.`
+                      ? `The ${cheapest.pounds} lb sack was ${money(unitRate(day.offers[offerIndex]) - unitRate(cheapest))} cheaper per pound.`
                       : result.leftover > 0
                         ? "You baked more than the shop could sell at that price."
                         : "Try a different markup — a higher price sells fewer.")}

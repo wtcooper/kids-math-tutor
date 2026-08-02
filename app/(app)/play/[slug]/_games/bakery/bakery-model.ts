@@ -7,19 +7,32 @@
  * Picking the worse unit rate is not marked incorrect — it just leaves you with less
  * money, which you can see.
  *
- * Everything is in pence and grams, integers throughout. Money in floats is how you end
- * up with a till reading £4.6000000000001.
+ * Money is whole cents and flour is whole cups, integers throughout. Money in floats is
+ * how a till ends up reading $4.6000000000001.
+ *
+ * Units are US kitchen units — pounds on the sack, cups in the recipe — because that is
+ * what she cooks and shops in. A toggle restates everything in grams and kilos; the sums
+ * are identical either way, which is the point of showing it.
  */
 
+/** A clean kitchen approximation, and the one the conversion panel states outright. */
+export const CUPS_PER_POUND = 4;
+/** For the metric view only. A cup of flour is about 120 g. */
+export const GRAMS_PER_CUP = 120;
+
 export interface Offer {
-  /** Sack size in grams. */
-  grams: number;
-  pence: number;
+  /** Sack size in pounds. */
+  pounds: number;
+  cents: number;
 }
 
-/** Pence per kilo — the number that decides which sack is actually cheaper. */
+export function cupsIn(offer: Offer): number {
+  return offer.pounds * CUPS_PER_POUND;
+}
+
+/** Cents per pound — the number that decides which sack is actually cheaper. */
 export function unitRate(offer: Offer): number {
-  return Math.round((offer.pence * 1000) / offer.grams);
+  return Math.round(offer.cents / offer.pounds);
 }
 
 export function bestOffer(offers: Offer[]): Offer {
@@ -28,21 +41,22 @@ export function bestOffer(offers: Offer[]): Offer {
 
 export interface Day {
   offers: Offer[];
-  gramsPerTray: number;
+  /** Recipe, in cups. */
+  cupsPerTray: number;
   bunsPerTray: number;
   /**
-   * Everything that is not flour — butter, sugar, the oven — per tray.
+   * Everything that is not flour — butter, sugar, the oven — per tray, in cents.
    *
-   * Without it the sums were technically correct and absurd: flour alone makes a bun cost
-   * about fourpence, and a game about money that quotes fourpenny buns reads as play
-   * money. The whole justification for this one is "when will I ever use this".
+   * Without it the sums were correct and absurd: flour alone makes a roll cost about four
+   * cents, and a game about money quoting four-cent rolls reads as play money. The whole
+   * justification for this one is "when will I ever use this".
    */
   otherPerTray: number;
-  /** Buns wanted at cost price; demand falls as the price rises. */
+  /** Rolls wanted at cost price; demand falls as the price rises. */
   baseDemand: number;
-  /** Buns fewer sold per penny of price. */
+  /** Rolls fewer sold per cent of price. */
   slope: number;
-  /** Profit in pence needed to call the day a good one. */
+  /** Profit in cents needed to call the day a good one. */
   target: number;
   markups: number[];
   clearanceOff: number;
@@ -59,9 +73,9 @@ export interface DayResult {
   flourCost: number;
   otherCost: number;
   totalCost: number;
-  gramsBought: number;
-  gramsUsed: number;
-  gramsWasted: number;
+  cupsBought: number;
+  cupsUsed: number;
+  cupsWasted: number;
   bunsMade: number;
   costPerBun: number;
   price: number;
@@ -82,19 +96,20 @@ export function demandAt(day: Day, price: number): number {
 }
 
 export function maxTrays(day: Day, offer: Offer): number {
-  return Math.floor(offer.grams / day.gramsPerTray);
+  return Math.floor(cupsIn(offer) / day.cupsPerTray);
 }
 
 export function simulate(day: Day, choices: Choices): DayResult {
   const offer = day.offers[choices.offerIndex];
-  const gramsUsed = choices.trays * day.gramsPerTray;
-  const overBaked = gramsUsed > offer.grams;
+  const cupsBought = cupsIn(offer);
+  const cupsUsed = choices.trays * day.cupsPerTray;
+  const overBaked = cupsUsed > cupsBought;
   const bunsMade = choices.trays * day.bunsPerTray;
 
-  const flourCost = offer.pence;
+  const flourCost = offer.cents;
   const otherCost = choices.trays * day.otherPerTray;
   const totalCost = flourCost + otherCost;
-  // Cost per bun rounded up: you cannot recover half a penny.
+  // Cost per roll rounded up: you cannot recover half a cent.
   const costPerBun = bunsMade > 0 ? Math.ceil(totalCost / bunsMade) : 0;
   const markup = day.markups[choices.markupIndex];
   const price = Math.max(1, Math.round(costPerBun * (1 + markup / 100)));
@@ -116,9 +131,9 @@ export function simulate(day: Day, choices: Choices): DayResult {
     flourCost,
     otherCost,
     totalCost,
-    gramsBought: offer.grams,
-    gramsUsed,
-    gramsWasted: Math.max(0, offer.grams - gramsUsed),
+    cupsBought,
+    cupsUsed,
+    cupsWasted: Math.max(0, cupsBought - cupsUsed),
     bunsMade,
     costPerBun,
     price,
@@ -151,40 +166,65 @@ export function bestProfit(day: Day): number {
   return best;
 }
 
-export function pence(p: number): string {
-  const sign = p < 0 ? "−" : "";
-  const abs = Math.abs(p);
-  return `${sign}£${Math.floor(abs / 100)}.${String(abs % 100).padStart(2, "0")}`;
+/** Cents as dollars. Never formats a float — that is where the stray fractions come from. */
+export function money(cents: number): string {
+  const sign = cents < 0 ? "−" : "";
+  const abs = Math.abs(cents);
+  return `${sign}$${Math.floor(abs / 100)}.${String(abs % 100).padStart(2, "0")}`;
+}
+
+export type Units = "us" | "metric";
+
+/** A flour amount in cups, said in whichever units are switched on. */
+export function flourText(cups: number, units: Units): string {
+  if (units === "us") {
+    return `${cups} cup${cups === 1 ? "" : "s"}`;
+  }
+  return `${cups * GRAMS_PER_CUP} g`;
+}
+
+/** A sack, said in whichever units are switched on. */
+export function sackText(offer: Offer, units: Units): string {
+  if (units === "us") return `${offer.pounds} lb`;
+  const grams = offer.pounds * CUPS_PER_POUND * GRAMS_PER_CUP;
+  return grams >= 1000 ? `${(grams / 1000).toFixed(1)} kg` : `${grams} g`;
+}
+
+/** The per-unit price, said in whichever units are switched on. */
+export function rateText(offer: Offer, units: Units): string {
+  if (units === "us") return `${money(unitRate(offer))} per lb`;
+  const kilos = (offer.pounds * CUPS_PER_POUND * GRAMS_PER_CUP) / 1000;
+  return `${money(Math.round(offer.cents / kilos))} per kg`;
 }
 
 export function genDay(level: number, rnd: (a: number, b: number) => number): Day {
-  const gramsPerTray = [200, 250, 300][rnd(0, 2)];
+  const cupsPerTray = rnd(2, 4);
   const bunsPerTray = [8, 10, 12][rnd(0, 2)];
 
   // Sacks with genuinely different unit rates — the bigger one is usually but not always
   // the better buy, so she has to work it out rather than learn a habit.
-  const smallGrams = 1000 * rnd(1, 2);
-  // Pence per kilo, in the range real flour actually costs.
-  const smallRate = rnd(110, 165);
-  const bigGrams = smallGrams + 1000 * rnd(2, 4);
+  const smallPounds = rnd(2, 3);
+  // Cents per pound, in the range flour actually costs.
+  const smallRate = rnd(70, 110);
+  const bigPounds = smallPounds + rnd(2, 5);
   const bigRateBetter = rnd(1, 10) > 3;
-  const bigRate = bigRateBetter ? smallRate - rnd(15, 40) : smallRate + rnd(10, 30);
+  const bigRate = bigRateBetter ? smallRate - rnd(10, 28) : smallRate + rnd(8, 20);
 
   const offers: Offer[] = [
-    { grams: smallGrams, pence: Math.round((smallGrams * smallRate) / 1000) },
-    { grams: bigGrams, pence: Math.round((bigGrams * bigRate) / 1000) },
+    { pounds: smallPounds, cents: smallPounds * smallRate },
+    { pounds: bigPounds, cents: bigPounds * bigRate },
   ];
   if (level >= 3) {
-    const midGrams = smallGrams + 1000;
-    const midRate = Math.min(smallRate, bigRate) + rnd(5, 18);
-    offers.push({ grams: midGrams, pence: Math.round((midGrams * midRate) / 1000) });
+    const midPounds = smallPounds + 1;
+    const midRate = Math.min(smallRate, bigRate) + rnd(4, 14);
+    offers.push({ pounds: midPounds, cents: midPounds * midRate });
   }
 
   const markups = level <= 1 ? [50, 100] : level <= 2 ? [40, 80, 120] : [30, 60, 90, 120];
 
   const day: Day = {
     offers,
-    gramsPerTray,
+    cupsPerTray,
     bunsPerTray,
     otherPerTray: 20 * rnd(11, 20),
     baseDemand: rnd(60, 110),

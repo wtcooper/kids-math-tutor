@@ -108,3 +108,17 @@
 
 .note { color: var(--ink2); font-size: 0.9rem; line-height: 1.55; margin: 0 0 18px }
 .actions { display: flex; gap: 10px; flex-wrap: wrap }
+
+.toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden }
+.unitOff, .unitOn {
+  appearance: none;
+  font: inherit;
+  font-size: 0.76rem;
+  cursor: pointer;
+  border: 0;
+  padding: 4px 12px;
+  background: transparent;
+  color: var(--ink3);
+}
+.unitOn { background: var(--clay-s); color: var(--clay-d); font-weight: 600 }
+.conv { color: var(--ink3); font-size: 0.82rem; margin: 10px 0 0 }
