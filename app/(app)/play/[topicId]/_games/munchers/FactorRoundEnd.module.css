@@ -1,0 +1,41 @@
+.factorLine {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.05rem;
+  margin: 10px 0;
+}
+
+.lhs {
+  color: var(--ink2);
+}
+
+.items {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+
+.sep {
+  color: var(--ink3);
+}
+
+/* Matches the tutor's .box — a value that has been picked out. */
+.box {
+  display: inline-block;
+  background: var(--sage-s);
+  border: 1px solid #cfe0ca;
+  border-radius: 7px;
+  padding: 0.05rem 0.4rem;
+  color: var(--sage-d);
+  font-weight: 600;
+}
+
+/* Matches the tutor's .mut. */
+.mut {
+  color: var(--ink3);
+  padding: 0.05rem 0.2rem;
+}

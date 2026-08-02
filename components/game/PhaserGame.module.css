@@ -1,0 +1,21 @@
+.host {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 100dvh;
+  margin-inline: auto;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  box-shadow: var(--sh2);
+  background: var(--cream);
+
+  /*
+   * Not optional. Without it iOS Safari treats Threading's drag as a page scroll and the
+   * core mechanic simply does not work on the device this is most likely to be played on.
+   */
+  touch-action: none;
+}
+
+.host canvas {
+  display: block;
+}

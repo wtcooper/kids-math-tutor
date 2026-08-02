@@ -45,7 +45,9 @@ export function fracText(n: number, d: number): string {
 export type RichToken = { t: "text"; v: string } | { t: "em"; v: string };
 export type Rich = RichToken[];
 
-const B_TAG = /<b>(.*?)<\/b>/gs;
+// [\s\S] rather than `.` with the /s flag — the dotall flag needs an ES2018 target and
+// tsconfig targets ES2017. Same behaviour, no config change.
+const B_TAG = /<b>([\s\S]*?)<\/b>/g;
 
 /** Parse the original's `<b>`-marked narration into tokens. */
 export function parseRich(html: string): Rich {
