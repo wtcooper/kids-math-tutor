@@ -8,6 +8,7 @@ import { GameChrome } from "@/components/game/GameChrome";
 import { FactorRoundEnd, type FactorRoundResult } from "./FactorRoundEnd";
 import { useAttemptRecorder } from "@/components/game/useAttemptRecorder";
 import type { HowTo } from "@/components/game/HowToPlay";
+import type { Workings } from "@/components/game/Workings";
 import type { GameProps } from "../../GameHost";
 import styles from "./Munchers.module.css";
 
@@ -65,6 +66,25 @@ export default function Munchers({
     [recorder],
   );
 
+  const workings: Workings = useMemo(() => {
+    if (!live) return { now: "Dealing the board…" };
+    const [, a, b] = live.rule.match(/(\d+)[^\d]+(\d+)?/) ?? [];
+    return {
+      now: live.left > 0
+        ? `${live.rule}. ${live.left} still on the board — and the Grumps are after them too.`
+        : "Board cleared.",
+      listTitle: "How to check one",
+      lines: [
+        { text: "multiples of n: does it appear when you count up in ns?", state: "todo" },
+        { text: "factors of n: does it divide n with nothing left over?", state: "todo" },
+        { text: "primes: does anything divide it except 1 and itself?", state: "todo" },
+      ],
+      hint: a
+        ? `Try dividing ${a} by the number you are standing on. If it goes exactly, it is a factor.`
+        : "Divide the number in the rule by the one you are standing on. No remainder means it fits.",
+    };
+  }, [live]);
+
   const createScenes = useMemo(
     () => (P: typeof Phaser) => [createGridScene(P, { level: initialLevel })],
     [initialLevel],
@@ -93,6 +113,8 @@ export default function Munchers({
       onLevel={changeLevel}
       instructions="Tap a square next to you to move, tap your own square to eat. Beat the Grumps to the right numbers."
       howTo={HOW_TO}
+      workings={workings}
+      workingsKey={`${level}-${live?.rule ?? ""}`}
       status={
         live ? (
           <>

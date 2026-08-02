@@ -5,6 +5,7 @@ import Link from "next/link";
 import { GameChrome } from "@/components/game/GameChrome";
 import { useAttemptRecorder } from "@/components/game/useAttemptRecorder";
 import type { HowTo } from "@/components/game/HowToPlay";
+import type { Workings } from "@/components/game/Workings";
 import { makeRng, mulberry32 } from "@/lib/math/rng";
 import { tutorHref } from "@/lib/topics";
 import type { GameProps } from "../../GameHost";
@@ -109,6 +110,25 @@ export default function Cut({ slug, topicId, name, concept, levels, initialLevel
     });
   }, [done, gap, denom, recorder]);
 
+  const optionsForPanel = workableDenoms(gap, reachable);
+  const needAtDenom = piecesNeeded(gap, denom);
+
+  const workings: Workings = useMemo(() => ({
+    now: done
+      ? "Filled exactly."
+      : denom === 1
+        ? `The gap is ${gap.n}/${gap.d} of a brick. Slice the brick until the pieces are small enough to fit it.`
+        : needAtDenom === null
+          ? `Pieces of 1/${denom} will never land on the line. ${gap.d} does not divide into ${denom} evenly — try slicing a different way.`
+          : `Each piece is 1/${denom}. How many make ${gap.n}/${gap.d}? That is ${gap.n} × ${denom} ÷ ${gap.d}.`,
+    listTitle: "Slicings that fit exactly",
+    lines: optionsForPanel.slice(0, 5).map((d) => ({
+      text: `${piecesNeeded(gap, d)} pieces of 1/${d}  =  ${gap.n}/${gap.d}`,
+      state: (d === denom ? "current" : "todo") as "current" | "todo",
+    })),
+    hint: `A slicing only works if ${gap.d} divides into it. Halving and thirding from a whole brick gets you to ${optionsForPanel.slice(0, 3).join(", ")} — all the same width of wall.`,
+  }), [done, denom, gap, needAtDenom, optionsForPanel]);
+
   const options = workableDenoms(gap, reachable);
   const simplest = options[0];
   const [sn, sd] = simplify(gap.n, gap.d);
@@ -125,6 +145,8 @@ export default function Cut({ slug, topicId, name, concept, levels, initialLevel
       onLevel={changeLevel}
       instructions="Slice the brick, then lay pieces into the gap until it is filled exactly."
       howTo={HOW_TO}
+      workings={workings}
+      workingsKey={`${level}-${nonce}`}
       status={
         <>
           <span className={styles.pip}>

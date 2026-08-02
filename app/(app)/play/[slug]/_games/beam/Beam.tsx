@@ -5,6 +5,7 @@ import Link from "next/link";
 import { GameChrome } from "@/components/game/GameChrome";
 import { useAttemptRecorder } from "@/components/game/useAttemptRecorder";
 import type { HowTo } from "@/components/game/HowToPlay";
+import type { Workings } from "@/components/game/Workings";
 import { makeRng, mulberry32 } from "@/lib/math/rng";
 import { tutorHref } from "@/lib/topics";
 import type { GameProps } from "../../GameHost";
@@ -112,6 +113,43 @@ export default function Beam({ slug, topicId, name, concept, levels, initialLeve
     [done, setting, demands, need, recorder],
   );
 
+  const workings: Workings = useMemo(() => {
+    if (setting === null) {
+      return {
+        now: `Every machine has to be paid in whole strands of the same size. What number can ${demands.map((d) => d.d).join(" and ")} both divide into?`,
+        listTitle: "The denominators",
+        lines: demands.map((d) => ({
+          text: `${d.name} wants ${d.n}/${d.d}`,
+          state: "current" as const,
+        })),
+        hint: `Count up in ${demands[0].d}s until you hit a number the others divide into too. That is the common denominator.`,
+      };
+    }
+    if (!workable) {
+      const bad = demands.find((d) => strandsFor(d, setting) === null)!;
+      return {
+        now: `${setting} strands cannot pay ${bad.name}: ${bad.n}/${bad.d} of ${setting} is not a whole number.`,
+        listTitle: "Check each machine",
+        lines: demands.map((d) => ({
+          text: `${d.n}/${d.d} of ${setting} = ${strandsFor(d, setting) ?? "not whole"}`,
+          state: (strandsFor(d, setting) === null ? "current" : "done") as "current" | "done",
+        })),
+        hint: `${setting} has to divide by every machine's bottom number. Try a bigger setting that all of them go into.`,
+      };
+    }
+    return {
+      now: `Split into ${setting}. Now work out each machine's share of ${setting} strands.`,
+      listTitle: "Converted",
+      lines: demands.map((d) => ({
+        text: `${d.n}/${d.d} = ${strandsFor(d, setting)}/${setting}`,
+        state: (given[demands.indexOf(d)] === strandsFor(d, setting) ? "done" : "current") as
+          | "done"
+          | "current",
+      })),
+      hint: `To find ${demands[0].n}/${demands[0].d} of ${setting}: divide ${setting} by ${demands[0].d}, then multiply by ${demands[0].n}.`,
+    };
+  }, [setting, workable, demands, given]);
+
   const total = totalDemand(demands);
   const strandW = setting ? BEAM_W / setting : BEAM_W;
 
@@ -126,6 +164,8 @@ export default function Beam({ slug, topicId, name, concept, levels, initialLeve
       onLevel={changeLevel}
       instructions="Split the beam so every machine can be paid in whole strands, then feed them."
       howTo={HOW_TO}
+      workings={workings}
+      workingsKey={`${level}-${nonce}`}
       status={
         <>
           <span className={styles.pip}>

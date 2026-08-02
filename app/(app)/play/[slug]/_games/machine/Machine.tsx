@@ -5,6 +5,7 @@ import Link from "next/link";
 import { GameChrome } from "@/components/game/GameChrome";
 import { useAttemptRecorder } from "@/components/game/useAttemptRecorder";
 import type { HowTo } from "@/components/game/HowToPlay";
+import type { Workings } from "@/components/game/Workings";
 import { makeRng, mulberry32 } from "@/lib/math/rng";
 import { tutorHref } from "@/lib/topics";
 import type { GameProps } from "../../GameHost";
@@ -147,6 +148,25 @@ export default function Machine({ slug, topicId, name, concept, levels, initialL
   }, []);
 
   const results = runResults(puzzle, ops);
+  const filled = ops.filter(Boolean).length;
+
+  const workings: Workings = useMemo(() => ({
+    now: done
+      ? "It runs."
+      : filled < ops.length
+        ? `Fill every socket. Whatever is drawn inside another box happens first.`
+        : puzzle.runs.length > 1
+          ? "Every test row has to match, not just the first. A machine that works for one input and not the others is not the machine."
+          : "The outlet is not reading the order slip yet — try a different operator.",
+    listTitle: "The test bench",
+    lines: puzzle.runs.map((r, i) => ({
+      text: `${puzzle.usesHopper ? `n = ${r}` : `run ${i + 1}`}: outlet ${results[i] ?? "?"} · wanted ${puzzle.targets[i]}`,
+      state: (results[i] === puzzle.targets[i] ? "done" : "current") as "done" | "current",
+    })),
+    hint: puzzle.usesHopper
+      ? "The hopper holds a different number each run, so the machine has to be right for all of them. Work out what happens to n, not to one number."
+      : "Work the inner box out first, then use its answer in the outer one. That is all the order of operations is.",
+  }), [done, filled, ops.length, puzzle, results]);
   const built = ops.every(Boolean) ? withOps(puzzle.shape, ops) : null;
   const slotIndex = { current: 0 };
 
@@ -161,6 +181,8 @@ export default function Machine({ slug, topicId, name, concept, levels, initialL
       onLevel={changeLevel}
       instructions="Drop operators into the sockets until the outlet matches the order slip."
       howTo={HOW_TO}
+      workings={workings}
+      workingsKey={`${level}-${nonce}`}
       status={
         <>
           <span className={styles.pip}>

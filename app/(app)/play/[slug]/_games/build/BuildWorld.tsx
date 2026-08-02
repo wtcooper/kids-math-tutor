@@ -7,6 +7,7 @@ import { OrbitControls } from "@react-three/drei";
 import { GameChrome } from "@/components/game/GameChrome";
 import { useAttemptRecorder } from "@/components/game/useAttemptRecorder";
 import type { HowTo } from "@/components/game/HowToPlay";
+import type { Workings } from "@/components/game/Workings";
 import { makeRng, mulberry32 } from "@/lib/math/rng";
 import { tutorHref } from "@/lib/topics";
 import type { GameProps } from "../../GameHost";
@@ -162,6 +163,51 @@ export default function BuildWorld({
   const result = check(commission, blocks);
   const b = bounds(blocks);
 
+  const workings: Workings = useMemo(() => {
+    const area = floorArea(blocks);
+    const vol = volume(blocks);
+    if (commission.kind === "floor") {
+      const shapes: string[] = [];
+      for (let w = 1; w <= (commission.target ?? 0); w++) {
+        if ((commission.target ?? 0) % w) continue;
+        const d = (commission.target ?? 0) / w;
+        if (w > GRID || d > GRID) continue;
+        shapes.push(`${w} × ${d} = ${commission.target}, edge ${2 * (w + d)}`);
+      }
+      return {
+        now: `Lay exactly ${commission.target} squares${commission.maxPerimeter ? `, with ${commission.maxPerimeter} edge or less` : ""}. You have ${area}.`,
+        listTitle: `Floors that make ${commission.target}`,
+        lines: shapes.map((t) => ({ text: t, state: "todo" as const })),
+        hint: "Floor area is width times depth. A squarer floor needs less edging than a long thin one with the same area.",
+      };
+    }
+    if (commission.kind === "volume") {
+      const boxes: string[] = [];
+      for (let w = 1; w <= GRID; w++)
+        for (let d = w; d <= GRID; d++)
+          for (let h = 1; h <= 8; h++)
+            if (w * d * h === commission.target) boxes.push(`${w} × ${d} × ${h}`);
+      return {
+        now: `Build a solid box of exactly ${commission.target} blocks. You have used ${vol}.`,
+        listTitle: `Boxes that make ${commission.target}`,
+        lines: boxes.slice(0, 6).map((t) => ({ text: t, state: "todo" as const })),
+        hint: "Volume is width × depth × height. Pick three numbers that multiply to the target, then build that box.",
+      };
+    }
+    const w = (commission.fromW ?? 0) * (commission.scaleBy ?? 1);
+    const d = (commission.fromD ?? 0) * (commission.scaleBy ?? 1);
+    return {
+      now: `Scale ${commission.fromW} by ${commission.fromD} up ${commission.scaleBy} times: that is ${w} by ${d}.`,
+      listTitle: "The scaling",
+      lines: [
+        { text: `${commission.fromW} × ${commission.scaleBy} = ${w} wide`, state: "current" },
+        { text: `${commission.fromD} × ${commission.scaleBy} = ${d} deep`, state: "current" },
+        { text: `area goes ${(commission.fromW ?? 0) * (commission.fromD ?? 0)} → ${w * d}`, state: "todo" },
+      ],
+      hint: "Scaling means every side is multiplied by the same number. Notice the area grows by that number squared, not by the number.",
+    };
+  }, [commission, blocks]);
+
   const submit = useCallback(() => {
     setSubmitted(true);
     recorder.record({
@@ -195,6 +241,8 @@ export default function BuildWorld({
       onLevel={changeLevel}
       instructions={commission.detail}
       howTo={HOW_TO}
+      workings={workings}
+      workingsKey={`${level}-${nonce}`}
       status={
         <>
           <span className={styles.pip}>{commission.title}</span>

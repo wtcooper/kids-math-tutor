@@ -122,3 +122,21 @@
 }
 .unitOn { background: var(--clay-s); color: var(--clay-d); font-weight: 600 }
 .conv { color: var(--ink3); font-size: 0.82rem; margin: 10px 0 0 }
+
+/* Working out the unit rate. The rate itself is deliberately not printed anywhere. */
+.rateRow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 12px }
+.rateLabel { font-size: 0.84rem; color: var(--ink2); width: 100% }
+.rateGuess { display: inline-flex; align-items: center; gap: 6px }
+.rateFor { font-size: 0.78rem; color: var(--ink3) }
+.rateInput {
+  width: 3.6rem;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  padding: 4px;
+  border: 1px solid var(--line2);
+  border-radius: 7px;
+  background: var(--paper);
+}
+.rateOk { border-color: #8aa683; background: var(--sage-s); color: var(--sage-d); font-weight: 600 }
+.rateTick { font-family: var(--mono); font-size: 0.78rem; color: var(--sage-d) }

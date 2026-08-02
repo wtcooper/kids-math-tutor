@@ -7,6 +7,7 @@ import { PhaserGame, type GameBus, type GameEvent } from "@/components/game/Phas
 import { GameChrome } from "@/components/game/GameChrome";
 import { useAttemptRecorder } from "@/components/game/useAttemptRecorder";
 import type { HowTo } from "@/components/game/HowToPlay";
+import type { Workings } from "@/components/game/Workings";
 import { tutorHref } from "@/lib/topics";
 import type { GameProps } from "../../GameHost";
 import { createEnclosureScene } from "./EnclosureScene";
@@ -97,6 +98,31 @@ export default function Enclosure({
     busRef.current?.send({ type: "level:set", level: next });
   }, []);
 
+  const workings: Workings = useMemo(() => {
+    if (!live) return { now: "Marking out the field…" };
+    // Every rectangle with the right area — the shapes she could choose between.
+    const shapes: string[] = [];
+    for (let w = 1; w <= live.wantArea; w++) {
+      if (live.wantArea % w) continue;
+      const h = live.wantArea / w;
+      if (w > 16 || h > 10) continue;
+      shapes.push(`${w} × ${h} = ${live.wantArea}, fence ${2 * (w + h)}`);
+    }
+    return {
+      now: live.closed
+        ? `You enclosed ${live.area} squares with ${live.fence} fence.`
+        : `Walk a loop around exactly ${live.wantArea} squares${live.maxPerimeter !== undefined ? `, using ${live.maxPerimeter} fence or less` : ""}. You have spent ${live.fence} so far.`,
+      listTitle: `Shapes that make ${live.wantArea}`,
+      lines: shapes.map((t) => ({
+        text: t,
+        state: (live.maxPerimeter !== undefined && Number(t.split("fence ")[1]) > live.maxPerimeter
+          ? "todo"
+          : "current") as "todo" | "current",
+      })),
+      hint: "Area is the squares inside; the fence is the edges around them. The squarer the shape, the less fence the same area needs — a long thin field is expensive.",
+    };
+  }, [live]);
+
   const over =
     live?.maxPerimeter !== undefined && live.fence > live.maxPerimeter;
 
@@ -111,6 +137,8 @@ export default function Enclosure({
       onLevel={changeLevel}
       instructions="Walk the fence one corner at a time, then close the loop back on the red post."
       howTo={HOW_TO}
+      workings={workings}
+      workingsKey={`${level}-${live?.wantArea ?? 0}`}
       status={
         live ? (
           <>

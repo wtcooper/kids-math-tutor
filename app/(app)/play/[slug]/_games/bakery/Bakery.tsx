@@ -5,6 +5,7 @@ import Link from "next/link";
 import { GameChrome } from "@/components/game/GameChrome";
 import { useAttemptRecorder } from "@/components/game/useAttemptRecorder";
 import type { HowTo } from "@/components/game/HowToPlay";
+import type { Workings } from "@/components/game/Workings";
 import { makeRng, mulberry32 } from "@/lib/math/rng";
 import { tutorHref } from "@/lib/topics";
 import type { GameProps } from "../../GameHost";
@@ -32,6 +33,7 @@ const HOW_TO: HowTo = {
   ],
   rules: [
     "Nothing here is marked right or wrong. The till just tells you what happened.",
+    "The price per pound is not printed. Divide the price by the pounds to find it.",
     "The bigger sack is usually cheaper per pound — but not always. Work it out.",
     "Charge more and you make more per roll, but fewer people buy.",
     "Flour you buy and do not bake with is money left in the sack.",
@@ -56,6 +58,8 @@ export default function Bakery({ slug, topicId, name, concept, levels, initialLe
   const [clearance, setClearance] = useState(false);
   const [sold, setSold] = useState(false);
   const [key, setKey] = useState(0);
+  /** Her worked-out price per pound for each sack, keyed by index. */
+  const [rateGuess, setRateGuess] = useState<Record<number, string>>({});
 
   if (key !== nonce) {
     setKey(nonce);
@@ -64,6 +68,7 @@ export default function Bakery({ slug, topicId, name, concept, levels, initialLe
     setMarkupIndex(0);
     setClearance(false);
     setSold(false);
+    setRateGuess({});
   }
 
   const cap = maxTrays(day, day.offers[offerIndex]);
@@ -95,6 +100,46 @@ export default function Bakery({ slug, topicId, name, concept, levels, initialLe
   }, []);
 
   const cheapest = bestOffer(day.offers);
+  const chosen = day.offers[offerIndex];
+
+  const workings: Workings = useMemo(() => {
+    if (sold) return { now: "The day is done — see how the till came out." };
+    const solvedRates = day.offers.filter(
+      (o, i) => (rateGuess[i] ?? "") !== "" && Number(rateGuess[i]) === unitRate(o),
+    ).length;
+
+    if (solvedRates < day.offers.length) {
+      return {
+        now: `Which sack is the better buy? Divide each price by how many pounds it holds.`,
+        listTitle: "Price per pound",
+        lines: day.offers.map((o, i) => ({
+          text:
+            (rateGuess[i] ?? "") !== "" && Number(rateGuess[i]) === unitRate(o)
+              ? `${o.cents}¢ ÷ ${o.pounds} lb = ${unitRate(o)}¢`
+              : `${o.cents}¢ ÷ ${o.pounds} lb = ?`,
+          state:
+            (rateGuess[i] ?? "") !== "" && Number(rateGuess[i]) === unitRate(o)
+              ? ("done" as const)
+              : ("current" as const),
+        })),
+        hint: "A unit rate is just the total shared out one pound at a time — divide the price by the pounds. The bigger sack is usually cheaper per pound, but not always.",
+      };
+    }
+
+    return {
+      now: `${safeTrays} tray${safeTrays === 1 ? "" : "s"} costs ${money(result.totalCost)} and makes ${result.bunsMade} rolls. Adding ${day.markups[markupIndex]}% on top gives ${money(result.price)} each.`,
+      listTitle: "Where the price comes from",
+      lines: [
+        { text: `flour ${money(result.flourCost)} + everything else ${money(result.otherCost)}`, state: "done" },
+        { text: `${money(result.totalCost)} ÷ ${result.bunsMade} rolls = ${money(result.costPerBun)} each`, state: "done" },
+        {
+          text: `${money(result.costPerBun)} + ${day.markups[markupIndex]}% = ${money(result.price)}`,
+          state: "current",
+        },
+      ],
+      hint: `To add ${day.markups[markupIndex]}%, work out ${day.markups[markupIndex]}% of the cost and add it on. A higher price earns more per roll but sells fewer — the target needs both.`,
+    };
+  }, [sold, day, rateGuess, safeTrays, result, markupIndex]);
 
   return (
     <GameChrome
@@ -107,6 +152,8 @@ export default function Bakery({ slug, topicId, name, concept, levels, initialLe
       onLevel={changeLevel}
       instructions="Buy flour, bake, set your price. The till tells you how the day went."
       howTo={HOW_TO}
+      workings={workings}
+      workingsKey={`${level}-${nonce}`}
       status={
         <>
           <span className={styles.pip}>Today&rsquo;s target: {money(day.target)} profit</span>
@@ -149,13 +196,46 @@ export default function Bakery({ slug, topicId, name, concept, levels, initialLe
               >
                 <span className={styles.offerSize}>{sackText(o, units)}</span>
                 <span className={styles.offerPrice}>{money(o.cents)}</span>
-                <span className={styles.offerRate}>{rateText(o, units)}</span>
               </button>
             ))}
           </div>
+          {/*
+            The price per pound is NOT printed any more. It was, and it handed over the
+            one calculation this step exists for — the whole level was decided before she
+            did anything. Now she works it out, and the box checks itself for free.
+          */}
+          <div className={styles.rateRow}>
+            <span className={styles.rateLabel}>
+              Which is cheaper {units === "us" ? "per pound" : "per kilo"}? Work it out:
+            </span>
+            {day.offers.map((o, i) => {
+              const typed = rateGuess[i] ?? "";
+              const right = typed !== "" && Number(typed) === unitRate(o);
+              return (
+                <label key={i} className={styles.rateGuess}>
+                  <span className={styles.rateFor}>{sackText(o, units)}</span>
+                  <input
+                    className={`${styles.rateInput} ${right ? styles.rateOk : ""}`}
+                    inputMode="numeric"
+                    value={typed}
+                    placeholder="¢"
+                    disabled={sold}
+                    aria-label={`Cents per pound for the ${o.pounds} pound sack`}
+                    onChange={(e) =>
+                      setRateGuess((prev) => ({
+                        ...prev,
+                        [i]: e.target.value.replace(/[^\d]/g, "").slice(0, 4),
+                      }))
+                    }
+                  />
+                  {right ? <span className={styles.rateTick}>{money(unitRate(o))}/lb</span> : null}
+                </label>
+              );
+            })}
+          </div>
           <p className={styles.conv}>
             {units === "us"
-              ? `1 lb of flour is about ${CUPS_PER_POUND} cups, so the ${cheapest.pounds} lb sack holds ${cheapest.pounds * CUPS_PER_POUND} cups.`
+              ? `1 lb of flour is about ${CUPS_PER_POUND} cups.`
               : `1 cup of flour is about ${GRAMS_PER_CUP} g — that is the only conversion here.`}
           </p>
         </section>
@@ -214,7 +294,9 @@ export default function Bakery({ slug, topicId, name, concept, levels, initialLe
                   disabled={sold}
                 >
                   <span className={styles.markupPct}>+{m}%</span>
-                  <span className={styles.markupPrice}>{money(preview.price)} each</span>
+                  <span className={styles.markupPrice}>
+                    {markupIndex === i ? `${money(preview.price)} each` : "?"}
+                  </span>
                 </button>
               );
             })}

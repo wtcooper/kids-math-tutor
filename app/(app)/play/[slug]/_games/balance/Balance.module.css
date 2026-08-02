@@ -128,3 +128,19 @@
 .sub { color: var(--ink2); margin: 0 0 14px; line-height: 1.5 }
 .note { color: var(--ink3); font-size: 0.86rem; margin: 0 0 18px }
 .actions { display: flex; gap: 10px; flex-wrap: wrap }
+
+/* She says what x is before the scale does. */
+.askX { display: flex; align-items: center; gap: 10px; margin-bottom: 6px }
+.askXLabel { font-family: var(--mono); font-size: 1.5rem; color: var(--ink2) }
+.askXInput {
+  width: 4.5rem;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 1.4rem;
+  padding: 4px 6px;
+  border: 1px solid var(--line2);
+  border-radius: 9px;
+  background: var(--paper);
+}
+.askXInput:focus { outline: 2px solid var(--clay); outline-offset: 1px }
+.askXWrong { color: #8c4750; font-size: 0.86rem; margin: 6px 0 14px }
