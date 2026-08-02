@@ -42,7 +42,11 @@ export interface GameBus {
 export type GameCommand =
   | { type: "level:set"; level: number }
   | { type: "pause" }
-  | { type: "resume" };
+  | { type: "resume" }
+  /** Board-editing games put their undo and reset in the HTML chrome, not the canvas. */
+  | { type: "undo" }
+  | { type: "reset" }
+  | { type: "next" };
 
 function makeBus(onEvent: (e: GameEvent) => void): GameBus {
   const listeners = new Set<(cmd: GameCommand) => void>();

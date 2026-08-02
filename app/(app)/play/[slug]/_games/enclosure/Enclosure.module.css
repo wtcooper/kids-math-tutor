@@ -1,0 +1,61 @@
+.pip {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 0.82rem;
+}
+.over { background: #f6e3e5; border-color: #e6c8cc; color: #8c4750; font-weight: 600 }
+
+.mini {
+  appearance: none;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink2);
+  border-radius: 999px;
+  padding: 3px 12px;
+}
+.mini:hover { border-color: var(--ink3); color: var(--ink) }
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(250, 246, 239, 0.86);
+  border-radius: 18px;
+  padding: 16px;
+}
+.panel { max-width: 440px }
+.h2 { font-family: Georgia, serif; font-size: 1.4rem; margin: 0 0 14px }
+
+.rows { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px }
+.row { display: flex; align-items: baseline; gap: 10px }
+.k { width: 86px; color: var(--ink3); font-size: 0.84rem }
+.good {
+  font-family: var(--mono);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--sage-d);
+  background: var(--sage-s);
+  border: 1px solid #cfe0ca;
+  border-radius: 7px;
+  padding: 0.05rem 0.5rem;
+}
+.bad {
+  font-family: var(--mono);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #8c4750;
+  background: #f6e3e5;
+  border: 1px solid #e6c8cc;
+  border-radius: 7px;
+  padding: 0.05rem 0.5rem;
+}
+.want { color: var(--ink3); font-size: 0.84rem }
+
+.note { color: var(--ink2); font-size: 0.92rem; line-height: 1.55; margin: 0 0 18px }
+.actions { display: flex; gap: 10px; flex-wrap: wrap }

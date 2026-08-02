@@ -11,7 +11,7 @@
  */
 
 /** The component that gets dynamically imported. Several games may share one. */
-export type GameImpl = "crossing" | "munchers" | "split";
+export type GameImpl = "crossing" | "munchers" | "split" | "enclosure";
 
 export interface GameMeta {
   /** Route: /play/<slug>. Stable — it is what her bookmarks point at. */
@@ -67,6 +67,15 @@ export const GAMES: readonly GameMeta[] = [
     topicId: "factors",
     blurb:
       "Shoot a rock and it breaks into two factors. Primes will not break — so you have to fly around what you made.",
+    focus: "understanding",
+  },
+  {
+    slug: "enclosure",
+    impl: "enclosure",
+    name: "Enclosure",
+    topicId: "geometry",
+    blurb:
+      "Walk a fence around exactly the area asked for. The fence you spend is the perimeter.",
     focus: "understanding",
   },
 ];

@@ -18,6 +18,14 @@ import {
   splitPair,
   startingNumbers,
 } from "../app/(app)/play/[slug]/_games/split/SplitScene";
+import {
+  bestPerimeter,
+  COLS,
+  enclosedCells,
+  makeCommission,
+  ROWS,
+  stripPerimeter,
+} from "../app/(app)/play/[slug]/_games/enclosure/EnclosureScene";
 
 const LEVELS = [1, 2, 3, 4];
 const SEEDS = 300;
@@ -104,6 +112,69 @@ describe("Split", () => {
       expect(pile.every((v) => splitPair(v) === null), `${n} left a composite`).toBe(true);
       expect(pile.reduce((a, b) => a * b, 1), `${n} lost value`).toBe(n);
       expect(pile.length, `${n}`).toBe(primeFactorCount(n));
+    }
+  });
+});
+
+describe("Enclosure", () => {
+  /** The lattice path around a w×h rectangle whose top-left cell is (c0, r0). */
+  function rect(c0: number, r0: number, w: number, h: number) {
+    const pts: { c: number; r: number }[] = [];
+    for (let c = c0; c < c0 + w; c++) pts.push({ c, r: r0 });
+    for (let r = r0; r < r0 + h; r++) pts.push({ c: c0 + w, r });
+    for (let c = c0 + w; c > c0; c--) pts.push({ c, r: r0 + h });
+    for (let r = r0 + h; r > r0; r--) pts.push({ c: c0, r });
+    return pts;
+  }
+
+  it("counts the squares inside a rectangle as width times height", () => {
+    for (let w = 1; w <= 6; w++) {
+      for (let h = 1; h <= 5; h++) {
+        expect(enclosedCells(rect(1, 1, w, h)).length, `${w}x${h}`).toBe(w * h);
+      }
+    }
+  });
+
+  it("counts the walked edges as the perimeter", () => {
+    for (let w = 1; w <= 6; w++) {
+      for (let h = 1; h <= 5; h++) {
+        expect(rect(1, 1, w, h).length, `${w}x${h}`).toBe(2 * (w + h));
+      }
+    }
+  });
+
+  it("handles an L-shape, where a bounding box would be wrong", () => {
+    // A 4-wide, 2-tall block with a 2x1 tab hanging below its left half: 8 + 2 = 10.
+    const path = [
+      { c: 1, r: 1 }, { c: 2, r: 1 }, { c: 3, r: 1 }, { c: 4, r: 1 }, { c: 5, r: 1 },
+      { c: 5, r: 2 }, { c: 5, r: 3 },
+      { c: 3, r: 3 },
+      { c: 3, r: 4 },
+      { c: 1, r: 4 },
+    ];
+    expect(enclosedCells(path).length).toBe(10);
+  });
+
+  it("every commission is achievable, and rules out the lazy 1xN strip", () => {
+    for (let level = 1; level <= 7; level++) {
+      for (let s = 0; s < 200; s++) {
+        const rand = mulberry32(8000 + s);
+        const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+        const c = makeCommission(level, rnd);
+        expect(c.area, `L${level}: ${c.label} does not fit the board`).toBeLessThanOrEqual(
+          COLS * ROWS,
+        );
+        if (c.maxPerimeter !== undefined) {
+          expect(
+            bestPerimeter(c.area),
+            `L${level}: "${c.label}" is impossible`,
+          ).toBeLessThanOrEqual(c.maxPerimeter);
+          expect(
+            stripPerimeter(c.area),
+            `L${level}: "${c.label}" — a 1x${c.area} strip still fits, so the cap teaches nothing`,
+          ).toBeGreaterThan(c.maxPerimeter);
+        }
+      }
     }
   });
 });
