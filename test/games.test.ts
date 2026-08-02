@@ -13,6 +13,11 @@ import {
   MIN_TARGETS,
 } from "../app/(app)/play/[slug]/_games/munchers/GridScene";
 import { mulberry32 } from "@/lib/math/rng";
+import {
+  primeFactorCount,
+  splitPair,
+  startingNumbers,
+} from "../app/(app)/play/[slug]/_games/split/SplitScene";
 
 const LEVELS = [1, 2, 3, 4];
 const SEEDS = 300;
@@ -61,6 +66,44 @@ describe("Munchers rules", () => {
       expect(rule.a % largest, `${rule.label}`).toBe(0);
       expect(rule.b! % largest, `${rule.label}`).toBe(0);
       expect(largest).toBeGreaterThan(1);
+    }
+  });
+});
+
+describe("Split", () => {
+  it("every starting rock really can be broken all the way down to primes", () => {
+    for (const level of LEVELS) {
+      for (let s = 0; s < 100; s++) {
+        const rand = mulberry32(7000 + s);
+        const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+        const nums = startingNumbers(level, rnd);
+        expect(new Set(nums).size, `L${level}: repeated rocks ${nums}`).toBe(nums.length);
+        for (const n of nums) {
+          // Composite, or there is nothing to shoot.
+          expect(splitPair(n), `L${level}: ${n} cannot be split at all`).not.toBeNull();
+          // Worth a tree rather than one snip.
+          expect(primeFactorCount(n), `L${level}: ${n}`).toBeGreaterThanOrEqual(3);
+        }
+      }
+    }
+  });
+
+  it("splitting repeatedly always terminates in primes whose product is the original", () => {
+    for (let n = 4; n <= 200; n++) {
+      let pile = [n];
+      let guard = 0;
+      while (pile.some((v) => splitPair(v)) && guard++ < 100) {
+        const next: number[] = [];
+        for (const v of pile) {
+          const pair = splitPair(v);
+          if (pair) next.push(pair[0], pair[1]);
+          else next.push(v);
+        }
+        pile = next;
+      }
+      expect(pile.every((v) => splitPair(v) === null), `${n} left a composite`).toBe(true);
+      expect(pile.reduce((a, b) => a * b, 1), `${n} lost value`).toBe(n);
+      expect(pile.length, `${n}`).toBe(primeFactorCount(n));
     }
   });
 });

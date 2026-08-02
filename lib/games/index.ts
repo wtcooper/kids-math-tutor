@@ -11,7 +11,7 @@
  */
 
 /** The component that gets dynamically imported. Several games may share one. */
-export type GameImpl = "crossing" | "munchers";
+export type GameImpl = "crossing" | "munchers" | "split";
 
 export interface GameMeta {
   /** Route: /play/<slug>. Stable — it is what her bookmarks point at. */
@@ -59,6 +59,15 @@ export const GAMES: readonly GameMeta[] = [
     topicId: "factors",
     blurb: "Move around the grid and eat only the numbers that fit the rule.",
     focus: "fluency",
+  },
+  {
+    slug: "split",
+    impl: "split",
+    name: "Split",
+    topicId: "factors",
+    blurb:
+      "Shoot a rock and it breaks into two factors. Primes will not break — so you have to fly around what you made.",
+    focus: "understanding",
   },
 ];
 

@@ -28,6 +28,7 @@ const LOADERS = {
     ssr: false,
     loading: Loading,
   }),
+  split: dynamic(() => import("./_games/split/Split"), { ssr: false, loading: Loading }),
 } satisfies Record<GameImpl, unknown>;
 
 /** Every game component takes exactly this. */

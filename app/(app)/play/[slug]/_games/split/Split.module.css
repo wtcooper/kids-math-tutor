@@ -1,0 +1,44 @@
+.pip {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 0.82rem;
+}
+.primes { color: #8c4750; font-size: 0.82rem; font-family: var(--mono) }
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(250, 246, 239, 0.86);
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.panel { max-width: 460px; text-align: left }
+.h2 { font-family: Georgia, serif; font-size: 1.45rem; margin: 0 0 6px }
+.sub { color: var(--ink2); margin: 0 0 16px }
+
+.trees { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px }
+.tree {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+.from { font-size: 1.1rem; color: var(--ink) }
+.eq { color: var(--ink3) }
+.to {
+  background: var(--sage-s);
+  border: 1px solid #cfe0ca;
+  border-radius: 7px;
+  padding: 0.05rem 0.5rem;
+  color: var(--sage-d);
+  font-weight: 600;
+}
+
+.foot { color: var(--ink3); font-size: 0.84rem; margin: 0 0 18px }
+.actions { display: flex; gap: 10px; flex-wrap: wrap }
