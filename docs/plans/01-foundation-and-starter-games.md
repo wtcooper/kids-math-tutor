@@ -1,6 +1,9 @@
 # Plan 01 — Foundation, tutor port, starter games
 
-> **Status:** Phase 0 complete (backups taken, plans captured). Phase 1 next.
+> **Status:** Phases 0–4 and 6 complete and deployed — foundation, `lib/math/`, all 21
+> topics ported and verified, tutor UI, and both starter games (Threading, Munchers).
+> **Only Phase 5 (cutover) is outstanding**, and it is gated on a human side-by-side of
+> `/tutor` against `/tutor-original`. See [03-tutor-parity.md](03-tutor-parity.md).
 > **Follow-up:** [02-future-games.md](02-future-games.md) — everything deliberately deferred.
 > **Evidence base:** [../research/](../research/) — 01 pedagogy, 02 tech, 03 prior art, 04 audience, 05 vision.
 
