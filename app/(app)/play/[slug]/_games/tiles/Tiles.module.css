@@ -17,55 +17,107 @@
   border-radius: 999px;
   padding: 3px 12px;
 }
-.mini:hover { border-color: var(--ink3); color: var(--ink) }
+.mini:hover:not(:disabled) { border-color: var(--ink3); color: var(--ink) }
+.mini:disabled { opacity: 0.45; cursor: default }
 
 .stage {
   position: relative;
-  display: flex;
-  gap: 20px;
-  align-items: flex-start;
-  flex-wrap: wrap;
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 18px;
-  padding: 18px;
+  padding: 20px;
 }
 
-.tray { display: flex; flex-direction: column; gap: 8px; min-width: 132px }
-.trayItem {
-  appearance: none;
-  font: inherit;
-  cursor: pointer;
+.cutRow { display: flex; gap: 22px; flex-wrap: wrap; margin-bottom: 18px }
+.cutLabel { display: flex; flex-direction: column; gap: 5px; flex: 1 1 210px }
+.cutText { font-family: var(--mono); font-size: 0.84rem; color: var(--ink2) }
+.cutLabel input[type="range"] { width: 100%; accent-color: var(--clay) }
+
+.board {
+  position: relative;
+  background: #fffcf7;
+  border: 1px solid #b9a88f;
+  border-radius: 4px;
+  margin: 0 auto 16px;
+  max-width: 100%;
+}
+
+.region {
+  position: absolute;
+  border: 1px solid #d8c8ac;
+  overflow: hidden;
   display: flex;
-  align-items: center;
-  gap: 9px;
-  border: 1px solid var(--line);
-  background: transparent;
-  border-radius: 12px;
-  padding: 7px 10px;
-  font-size: 0.82rem;
-  color: var(--ink2);
-  text-align: left;
 }
-.trayItem:hover { border-color: var(--line2) }
-.trayItem.on { background: var(--clay-s); border-color: #e6c3ae; color: var(--clay-d); font-weight: 600 }
-.swatch { flex: none }
-.count { margin-left: auto; color: var(--ink3); font-variant-numeric: tabular-nums }
+.region.right { border-color: #8aa683 }
 
-.board { touch-action: manipulation; cursor: pointer; max-width: 100%; height: auto }
+/* What she claimed, drawn as a proportion of the piece: short if under, spilling if over. */
+.fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #dce7d6;
+  transition: height 0.18s ease-out;
+}
+.fill.over { background: #f2dade }
+
+.regionBody {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  padding: 4px;
+}
+.dims {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--ink2);
+  white-space: nowrap;
+}
+.easy { color: var(--clay-d); margin-left: 3px }
+
+.claim {
+  width: 4.2rem;
+  max-width: 90%;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 1rem;
+  padding: 3px 4px;
+  border: 1px solid var(--line2);
+  border-radius: 7px;
+  background: var(--paper);
+  color: var(--ink);
+}
+.claim:focus { outline: 2px solid var(--clay); outline-offset: 1px }
+.claimOk { border-color: #8aa683; background: var(--sage-s); color: var(--sage-d); font-weight: 600 }
+
+.running {
+  margin: 0;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 1.05rem;
+}
+.good { color: var(--sage-d); font-weight: 600 }
+.unknown { color: var(--ink3) }
+.plus { color: var(--ink3) }
+.runTotal { color: var(--ink); font-weight: 600 }
+.hintLine { margin: 0; text-align: center; color: var(--ink3); font-size: 0.88rem }
 
 .overlay {
   position: absolute;
   inset: 0;
   display: grid;
   place-items: center;
-  background: rgba(250, 246, 239, 0.9);
+  background: rgba(250, 246, 239, 0.93);
   border-radius: 18px;
   padding: 16px;
 }
-.panel { max-width: 470px }
-.h2 { font-family: Georgia, serif; font-size: 1.45rem; margin: 0 0 4px }
-.sub { color: var(--ink2); margin: 0 0 16px }
+.panel { max-width: 460px }
+.h2 { font-family: Georgia, serif; font-size: 1.45rem; margin: 0 0 14px }
 
 .work { margin-bottom: 14px }
 .line { margin-bottom: 8px }
@@ -81,6 +133,5 @@
   color: var(--sage-d);
 }
 .total { font-family: var(--mono); font-size: 1.1rem; color: var(--ink) }
-
-.foot { color: var(--ink3); font-size: 0.84rem; margin: 0 0 18px }
+.foot { color: var(--ink3); font-size: 0.84rem; margin: 0 0 18px; line-height: 1.5 }
 .actions { display: flex; gap: 10px; flex-wrap: wrap }

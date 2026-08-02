@@ -27,11 +27,12 @@ import {
   stripPerimeter,
 } from "../app/(app)/play/[slug]/_games/enclosure/EnclosureScene";
 import {
-  canPlace,
-  decompose,
+  allEasy,
+  allSolved,
+  areasSumToProduct,
   genTiles,
-  MAX_TILES,
-  type Placed,
+  regionsFor,
+  tensCut,
 } from "../app/(app)/play/[slug]/_games/tiles/tiles-model";
 import {
   fillsExactly,
@@ -247,62 +248,61 @@ describe("Enclosure", () => {
 });
 
 describe("Tiles", () => {
-  it("the four partial products always add to the product", () => {
-    for (let a = 2; a <= 60; a++) {
-      for (let b = 2; b <= 30; b++) {
-        const d = decompose({ a, b });
-        const sum =
-          d.tensA * d.tensB + d.tensA * d.onesB + d.onesA * d.tensB + d.onesA * d.onesB;
-        expect(sum, `${a}x${b}`).toBe(a * b);
-        expect(d.product).toBe(a * b);
+  it("whatever the cut, the pieces add up to the whole rectangle", () => {
+    // The distributive property itself. It must hold for every cut, not just the tens —
+    // which is why she is allowed to cut anywhere.
+    for (let a = 11; a <= 40; a += 3) {
+      for (let b = 11; b <= 30; b += 3) {
+        for (let x = 0; x <= a; x += 2) {
+          for (let y = 0; y <= b; y += 3) {
+            expect(areasSumToProduct({ a, b }, { x, y }), `${a}x${b} cut ${x},${y}`).toBe(true);
+          }
+        }
       }
     }
   });
 
-  it("the tile counts cover exactly the rectangle", () => {
-    for (let a = 2; a <= 60; a++) {
-      for (let b = 2; b <= 30; b++) {
-        const d = decompose({ a, b });
-        const area = d.hundreds * 100 + d.tenDowns * 10 + d.tenAcrosses * 10 + d.ones;
-        expect(area, `${a}x${b}`).toBe(a * b);
-        expect(d.fewest).toBe(d.hundreds + d.tenDowns + d.tenAcrosses + d.ones);
-      }
-    }
+  it("two cuts make four pieces; one makes two; none makes one", () => {
+    const prob = { a: 23, b: 14 };
+    expect(regionsFor(prob, { x: 20, y: 10 })).toHaveLength(4);
+    expect(regionsFor(prob, { x: 20, y: 0 })).toHaveLength(2);
+    expect(regionsFor(prob, { x: 0, y: 0 })).toHaveLength(1);
+    // A cut flush with the edge is not a cut.
+    expect(regionsFor(prob, { x: 23, y: 14 })).toHaveLength(1);
   });
 
-  it("refuses a tile that would overlap or hang off the edge", () => {
-    const prob = { a: 12, b: 14 };
-    expect(canPlace([], "hundred", 0, 0, prob)).toBe(true);
-    // Would run past the right edge.
-    expect(canPlace([], "hundred", 5, 0, prob)).toBe(false);
-    // Would run past the bottom.
-    expect(canPlace([], "hundred", 0, 6, prob)).toBe(false);
-    // A 1x10 strip does not fit in an 8-tall board.
-    expect(canPlace([], "tenDown", 0, 0, { a: 12, b: 8 })).toBe(false);
-
-    const first: Placed[] = [{ id: 1, kind: "hundred", c: 0, r: 0 }];
-    expect(canPlace(first, "one", 5, 5, prob)).toBe(false);
-    expect(canPlace(first, "one", 10, 0, prob)).toBe(true);
-    expect(canPlace(first, "one", 0, 10, prob)).toBe(true);
-  });
-
-  it("every generated rectangle is small enough to tile by hand", () => {
+  it("cutting at the tens is what makes every piece one she already knows", () => {
     for (let level = 1; level <= 4; level++) {
       for (let s = 0; s < 200; s++) {
         const rand = mulberry32(9000 + s);
         const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
         const p = genTiles(level, rnd);
-        const d = decompose(p);
-        expect(
-          d.fewest,
-          `L${level}: ${p.a}x${p.b} needs ${d.fewest} tiles`,
-        ).toBeLessThanOrEqual(MAX_TILES);
-        // Every board has a real four-way split, or there is no distributive property
-        // on show — which is the entire point of the game.
-        expect(d.hundreds, `L${level}: ${p.a}x${p.b} has no hundred`).toBeGreaterThan(0);
-        expect(d.ones, `L${level}: ${p.a}x${p.b} has no ones corner`).toBeGreaterThan(0);
+        const easy = regionsFor(p, tensCut(p));
+        expect(easy).toHaveLength(4);
+        expect(allEasy(easy), `${p.a}x${p.b} at the tens is not easy`).toBe(true);
+        // And the pieces really are the partial products.
+        expect(easy.map((r) => r.area).reduce((m, n) => m + n, 0)).toBe(p.a * p.b);
       }
     }
+  });
+
+  it("an awkward cut still works but is not marked easy", () => {
+    const prob = { a: 23, b: 14 };
+    const awkward = regionsFor(prob, { x: 7, y: 5 });
+    expect(awkward).toHaveLength(4);
+    expect(allEasy(awkward)).toBe(false);
+    expect(areasSumToProduct(prob, { x: 7, y: 5 })).toBe(true);
+  });
+
+  it("only the exact area counts as solved", () => {
+    const prob = { a: 23, b: 14 };
+    const regions = regionsFor(prob, tensCut(prob));
+    const right = regions.map((r) => r.area);
+    expect(allSolved(regions, right)).toBe(true);
+    const oneOff = [...right];
+    oneOff[0] = oneOff[0] + 1;
+    expect(allSolved(regions, oneOff)).toBe(false);
+    expect(allSolved(regions, [null, null, null, null])).toBe(false);
   });
 });
 

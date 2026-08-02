@@ -1,130 +1,103 @@
 /**
- * Tiles — the maths behind the board.
+ * Tiles — the distributive property, where the arithmetic is the only way through.
  *
- * Pure, so the packing rules and the partial-product arithmetic can be tested without a
- * browser. The component only draws what is here.
+ * The first version was a packing puzzle: cover an a × b rectangle with hundreds, tens
+ * and ones. You could finish it by eye, and the four partial products only appeared in
+ * the summary *afterwards* — so the maths was a label on the result rather than the way
+ * to get there. It played like Tetris.
+ *
+ * Now you choose where to cut, and then say how big each piece is. What you claim is what
+ * fills, so a wrong area is visibly the wrong size. You cannot fill a piece without
+ * working out its area, and cutting at the ten is what makes those multiplications ones
+ * you can do in your head — which is the lesson, discovered rather than announced.
  */
-
-export type TileKind = "hundred" | "tenAcross" | "tenDown" | "one";
-
-export const TILE_SIZE: Record<TileKind, { w: number; h: number }> = {
-  hundred: { w: 10, h: 10 },
-  tenAcross: { w: 10, h: 1 },
-  tenDown: { w: 1, h: 10 },
-  one: { w: 1, h: 1 },
-};
-
-export const TILE_VALUE: Record<TileKind, number> = {
-  hundred: 100,
-  tenAcross: 10,
-  tenDown: 10,
-  one: 1,
-};
-
-export interface Placed {
-  id: number;
-  kind: TileKind;
-  /** Top-left cell. */
-  c: number;
-  r: number;
-}
 
 export interface TilesProblem {
   a: number;
   b: number;
 }
 
-/** Nobody is laying more than this many tiles by hand. */
-export const MAX_TILES = 42;
+/** Where the two cuts sit. 0 means "not cut on that axis yet". */
+export interface Cuts {
+  x: number;
+  y: number;
+}
 
-/**
- * Deliberately not the tutor's `genMul`: that goes up to 999 × 9, which is 8,991 unit
- * squares and cannot be tiled by hand. Same representation as the tutor's area model,
- * sized for something she can actually cover.
- *
- * Built from the digits rather than from the whole numbers, because the tile count is
- * `(tensA + onesA) × (tensB + onesB)` — so a big ones digit is what makes a board
- * miserable, not a big number. 17 × 9 looks small and needs 63 unit squares.
- */
+export interface Region {
+  /** Reading order: top-left, top-right, bottom-left, bottom-right. */
+  index: number;
+  w: number;
+  h: number;
+  /** Grid position of the region's top-left cell. */
+  c: number;
+  r: number;
+  area: number;
+}
+
 export function genTiles(level: number, rnd: (a: number, b: number) => number): TilesProblem {
   const spec =
     level <= 1
-      ? { A: [1, 1], B: [1, 1], ones: [1, 3] }
+      ? { A: [1, 1], B: [1, 1], ones: [2, 6] }
       : level === 2
-        ? { A: [1, 2], B: [1, 1], ones: [1, 4] }
+        ? { A: [1, 2], B: [1, 1], ones: [2, 8] }
         : level === 3
-          ? { A: [1, 2], B: [1, 2], ones: [1, 4] }
-          : { A: [2, 3], B: [1, 2], ones: [1, 4] };
+          ? { A: [1, 2], B: [1, 2], ones: [2, 9] }
+          : { A: [2, 4], B: [1, 3], ones: [2, 9] };
 
   const a = rnd(spec.A[0], spec.A[1]) * 10 + rnd(spec.ones[0], spec.ones[1]);
   const b = rnd(spec.B[0], spec.B[1]) * 10 + rnd(spec.ones[0], spec.ones[1]);
   return { a, b };
 }
 
-/** The four partial products, as the tutor writes them. */
-export interface Decomposition {
-  tensA: number;
-  onesA: number;
-  tensB: number;
-  onesB: number;
-  hundreds: number;
-  tenDowns: number;
-  tenAcrosses: number;
-  ones: number;
-  /** Fewest tiles this rectangle can be covered with. */
-  fewest: number;
-  product: number;
+/** The cut that makes every piece easy: at the ten. */
+export function tensCut({ a, b }: TilesProblem): Cuts {
+  return { x: Math.floor(a / 10) * 10, y: Math.floor(b / 10) * 10 };
 }
 
-export function decompose({ a, b }: TilesProblem): Decomposition {
-  const A = Math.floor(a / 10);
-  const ra = a % 10;
-  const B = Math.floor(b / 10);
-  const rb = b % 10;
-  return {
-    tensA: A * 10,
-    onesA: ra,
-    tensB: B * 10,
-    onesB: rb,
-    hundreds: A * B,
-    tenDowns: ra * B,
-    tenAcrosses: A * rb,
-    ones: ra * rb,
-    fewest: (A + ra) * (B + rb),
-    product: a * b,
-  };
-}
+/**
+ * The pieces a pair of cuts makes. A cut of 0, or one flush with an edge, simply makes
+ * fewer pieces — so a half-made cut is still a legal board rather than an error.
+ */
+export function regionsFor(prob: TilesProblem, cuts: Cuts): Region[] {
+  const xs = cuts.x > 0 && cuts.x < prob.a ? [cuts.x] : [];
+  const ys = cuts.y > 0 && cuts.y < prob.b ? [cuts.y] : [];
+  const colEdges = [0, ...xs, prob.a];
+  const rowEdges = [0, ...ys, prob.b];
 
-/** Can this tile go here without leaving the rectangle or landing on another? */
-export function canPlace(
-  placed: Placed[],
-  kind: TileKind,
-  c: number,
-  r: number,
-  prob: TilesProblem,
-): boolean {
-  const { w, h } = TILE_SIZE[kind];
-  if (c < 0 || r < 0 || c + w > prob.a || r + h > prob.b) return false;
-  return !placed.some((p) => {
-    const s = TILE_SIZE[p.kind];
-    return c < p.c + s.w && c + w > p.c && r < p.r + s.h && r + h > p.r;
-  });
-}
-
-export function coveredCells(placed: Placed[]): number {
-  return placed.reduce((n, p) => n + TILE_SIZE[p.kind].w * TILE_SIZE[p.kind].h, 0);
-}
-
-/** Which placed tile, if any, sits on this cell. Topmost wins; they never overlap. */
-export function tileAt(placed: Placed[], c: number, r: number): Placed | undefined {
-  return placed.find((p) => {
-    const s = TILE_SIZE[p.kind];
-    return c >= p.c && c < p.c + s.w && r >= p.r && r < p.r + s.h;
-  });
-}
-
-export function tally(placed: Placed[]): Record<TileKind, number> {
-  const out: Record<TileKind, number> = { hundred: 0, tenAcross: 0, tenDown: 0, one: 0 };
-  for (const p of placed) out[p.kind]++;
+  const out: Region[] = [];
+  let i = 0;
+  for (let r = 0; r < rowEdges.length - 1; r++) {
+    for (let c = 0; c < colEdges.length - 1; c++) {
+      const w = colEdges[c + 1] - colEdges[c];
+      const h = rowEdges[r + 1] - rowEdges[r];
+      out.push({ index: i++, w, h, c: colEdges[c], r: rowEdges[r], area: w * h });
+    }
+  }
   return out;
+}
+
+export function allSolved(regions: Region[], claims: (number | null)[]): boolean {
+  return regions.length > 0 && regions.every((rg) => claims[rg.index] === rg.area);
+}
+
+/**
+ * Is this a side she can multiply in her head? A whole ten or a single digit is a fact
+ * she already has; 13 × 7 is not.
+ */
+export function isEasy(n: number): boolean {
+  return n % 10 === 0 || n < 10;
+}
+
+export function allEasy(regions: Region[]): boolean {
+  return regions.every((rg) => isEasy(rg.w) && isEasy(rg.h));
+}
+
+/** The areas, summed, as the tutor would write it: "200 + 80 + 30 + 12". */
+export function sumText(regions: Region[]): string {
+  return regions.map((r) => r.area).join(" + ");
+}
+
+/** Every region's area adds up to the whole rectangle, whatever the cut. */
+export function areasSumToProduct(prob: TilesProblem, cuts: Cuts): boolean {
+  return regionsFor(prob, cuts).reduce((n, r) => n + r.area, 0) === prob.a * prob.b;
 }
