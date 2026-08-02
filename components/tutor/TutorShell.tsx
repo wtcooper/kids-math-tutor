@@ -140,8 +140,7 @@ export function TutorShell({
       </section>
 
       <p className={styles.legacy}>
-        Looking for the pictures and the step-by-step walkthroughs?{" "}
-        <a href="/legacy">Open the original table</a>.
+        Want every topic on one page? <a href="/tutor">Open the full Math Tutor</a>.
       </p>
     </main>
   );

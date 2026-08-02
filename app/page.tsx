@@ -36,9 +36,9 @@ export default async function LandingPage() {
         </a>
       </header>
 
-      <a className={`card ${styles.hero}`} href="/legacy">
+      <a className={`card ${styles.hero}`} href="/tutor">
         <div className={styles.heroBody}>
-          <h2 className={styles.heroTitle}>The whole table</h2>
+          <h2 className={styles.heroTitle}>The Math Tutor</h2>
           <p className={styles.heroText}>
             Every topic and every level in one place, with pictures, worked examples,
             guided practice and printable worksheets. Start here if you are not sure

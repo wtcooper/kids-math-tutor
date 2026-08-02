@@ -213,10 +213,10 @@ plus the body gradient treatment at 27–34. Components use CSS Modules.
 **Do not port `.rectshape`, `.dimlbl`, `.tri`, `.prism` (lines 305–312)** — dead rules
 from a DOM shape renderer that `svgShape` replaced.
 
-**1.6 Keep the old app alive.** The current route handler moves to `/legacy` and keeps
+**1.6 Keep the old app alive.** The current route handler moves to `/tutor` and keeps
 working throughout the port — both the live fallback and the differential oracle.
 Archived, not deleted, in Phase 5. Update `outputFileTracingIncludes` to key on
-`"/legacy"`; production-only failure mode, invisible in dev.
+`"/tutor"`; production-only failure mode, invisible in dev.
 
 ---
 
@@ -328,14 +328,14 @@ Only once the differential and invariant suites are green, and only after a seco
 snapshot (`_archive/pre-cutover/`):
 
 ```bash
-mkdir -p _archive/legacy
-mv app/legacy/route.ts  _archive/legacy/route.ts.bak
-mv docs/math-table.html _archive/legacy/
-mv scripts/oracle.mjs   _archive/legacy/
+mkdir -p _archive/single-page-tutor
+mv 'app/(app)/tutor/route.ts'  _archive/single-page-tutor/route.ts.bak
+mv docs/math-table.html _archive/single-page-tutor/
+mv scripts/oracle.mjs   _archive/single-page-tutor/
 ```
 
 Keep the differential tests in the repo but skipped (`describe.skip`) with a one-line
-comment pointing at `_archive/legacy/math-table.html` — if the oracle ever needs to come
+comment pointing at `_archive/single-page-tutor/math-table.html` — if the oracle ever needs to come
 back, that's the whole restoration procedure. The invariant tests stay active; they are
 the permanent safety net.
 
@@ -406,7 +406,7 @@ It proves the whole vertical slice at the lowest cost.
 - `npm test` — differential suite green across all 89 topic×level combos.
 - Invariant suite green: step integrity, level-label honesty both directions, regrouping
   guarantees, scratch persistence.
-- Manual side-by-side: `/legacy` and `/tutor/<topic>` on the same seed.
+- Manual side-by-side: `/tutor` and `/tutor/<topic>` on the same seed.
 
 **Auth**
 - Signed out → `/tutor/add` redirects to `/sign-in`.
@@ -434,9 +434,9 @@ and confirm rows in Neon before `--prod`.
 
 ## Hazards
 
-1. **`app/page.tsx` and `app/route.ts` cannot coexist** at a segment — the `/legacy` move
+1. **`app/page.tsx` and `app/route.ts` cannot coexist** at a segment — the `/tutor` move
    must be atomic.
-2. **`outputFileTracingIncludes` must follow the legacy route** — dev reads from disk
+2. **`outputFileTracingIncludes` must follow the tutor route** — dev reads from disk
    regardless, so getting it wrong passes every local check and 500s only in production.
 3. **Slots are mutated in place in the original.** Porting that pattern into React produces
    stale-render bugs that are miserable to trace. Split static from answer state on day one.
