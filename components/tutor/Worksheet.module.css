@@ -1,0 +1,19 @@
+/* Hidden on screen; the print rules below hide everything else instead. */
+.printArea { display:none }
+
+@media print {
+  .printArea { display:block }
+  .psheet { page-break-after:always; padding:12mm 10mm; color:#000 }
+  .keyPage { page-break-after:auto }
+  .h1 { font-family:Georgia, serif; font-size:20pt; margin:0 0 4pt }
+  .h2 { font-family:Georgia, serif; font-size:16pt; margin:0 0 8pt }
+  .meta { color:#666; font-size:10pt; margin:0 0 16pt }
+  .cols4 { columns:4; font-family:monospace; font-size:11pt; line-height:2.4 }
+  .cols5 { columns:5; font-family:monospace; font-size:10pt; line-height:1.9 }
+  .pgrid { display:grid; grid-template-columns:1fr 1fr; gap:14mm 10mm }
+  .pitem { display:flex; gap:6mm; align-items:baseline; min-height:22mm;
+    border-bottom:1px solid #ddd; padding-bottom:3mm }
+  .n { font-weight:700; color:#888; min-width:6mm }
+  .p { font-family:monospace; font-size:13pt }
+  .pkey { columns:2; font-family:monospace; font-size:11pt; line-height:2 }
+}

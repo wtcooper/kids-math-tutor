@@ -230,9 +230,17 @@ export function GridWatch({ model }: { model: GridModel | DivGridModel }) {
         >
           Next step →
         </button>
+        <button
+          type="button"
+          className="btn ghost sm"
+          disabled={idx >= last}
+          onClick={() => setIdx(last)}
+        >
+          Show all
+        </button>
         {idx > 0 ? (
           <button type="button" className="btn ghost sm" onClick={() => setIdx(0)}>
-            Start over
+            Restart
           </button>
         ) : null}
         <span className={styles.counter}>

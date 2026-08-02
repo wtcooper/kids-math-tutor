@@ -1,127 +1,70 @@
-.wrap {
-  padding: 6px 0 2px;
-}
+/* Ported from the original's stylesheet so Learn and Drill look as they did. */
 
-.learnHead {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 10px;
-}
+.cardHead { display:flex; justify-content:space-between; align-items:flex-start;
+  gap:14px; flex-wrap:wrap; margin-bottom:16px }
+.headTitle { font-size:1.25rem; margin:0 }
+.headSub { margin:4px 0 0; color:var(--ink2); font-size:.92rem; max-width:56ch }
+.btnRow { display:flex; gap:9px; flex-wrap:wrap; align-items:center }
+.famRow { display:flex; gap:9px; flex-wrap:wrap; margin-bottom:14px }
 
-.counter {
-  font-size: 0.78rem;
-  color: var(--ink3);
-}
+.note { background:var(--gold-s); border:1px solid #ecd9ac; border-radius:12px;
+  padding:12px 15px; margin:12px 0; font-size:.9rem; color:var(--ink2); line-height:1.6 }
+.skipOn { font-weight:700; color:var(--ink) }
+.skipOff { opacity:.3 }
 
-.card {
-  background: var(--paper2);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 26px 24px;
-  text-align: center;
-}
+.ladder { margin-top:6px }
+.rung { display:flex; align-items:center; gap:14px; padding:8px 14px; border-radius:12px;
+  transition:.2s; font-family:var(--mono) }
+.rung:nth-child(odd) { background:var(--paper2) }
+.rungOn { background:var(--gold-s); box-shadow:inset 3px 0 0 var(--gold) }
+.rq { font-size:1.15rem; min-width:5.4rem }
+.ra { font-size:1.15rem; font-weight:700; color:var(--clay-d); min-width:3rem }
+.rskip { font-size:.85rem; color:var(--ink3); font-family:var(--sans) }
+.rungHid .ra { color:transparent; background:var(--line); border-radius:6px }
+.rungDim { opacity:.34 }
 
-.q {
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
-  font-size: clamp(1.8rem, 6vw, 2.6rem);
-  margin: 0 0 16px;
-}
+.narr { background:var(--paper2); border:1px solid var(--line);
+  border-left:4px solid var(--clay); border-radius:14px; padding:14px 18px; margin-top:12px }
+.narrLabel { font-size:.7rem; letter-spacing:.15em; text-transform:uppercase;
+  color:var(--clay-d); font-weight:800; margin-bottom:4px }
+.narr p { margin:0; font-size:1.03rem }
 
-.a {
-  font-family: var(--mono);
-  font-size: clamp(1.6rem, 5vw, 2.2rem);
-  color: var(--sage-d);
-  margin: 0 0 10px;
-  font-weight: 600;
-}
+/* ---------- drill ---------- */
+.deckbar { display:flex; gap:4px; justify-content:center; flex-wrap:wrap;
+  margin:16px auto 4px; max-width:460px }
+.deckbar i { width:13px; height:7px; border-radius:99px; background:var(--line2) }
+.deckbar i.done { background:var(--sage) }
+.deckbar i.miss { background:var(--berry) }
+.deckbar i.now { background:var(--clay); transform:scaleY(1.7) }
 
-.hook {
-  margin: 12px 0 0;
-  font-size: 0.9rem;
-  color: var(--ink2);
-  line-height: 1.5;
-}
+.deckwrap { display:flex; flex-direction:column; align-items:center; padding:8px 0 4px }
+.fcard { width:min(100%,420px); background:var(--paper2); border:1px solid var(--line);
+  border-radius:22px; padding:30px 24px; text-align:center; transition:.2s }
+.fcard.right { background:var(--sage-s); border-color:#CBDEC5 }
+.fcard.wrong { background:var(--berry-s); border-color:#EBC9CB }
+.fq { font-family:var(--mono); font-size:3.1rem; font-variant-numeric:tabular-nums;
+  letter-spacing:.04em; line-height:1.1 }
+.fans { width:8.5rem; height:3.6rem; margin-top:18px; border:2px solid var(--line2);
+  border-radius:15px; background:#FFFDFA; text-align:center; font-family:var(--mono);
+  font-size:1.9rem; color:var(--ink) }
+.fans:focus { outline:none; border-color:var(--clay);
+  box-shadow:0 0 0 4px rgba(190,110,78,.13) }
+.fans.ok { border-color:var(--sage); background:var(--sage-s); color:var(--sage-d) }
+.fans.bad { border-color:var(--berry); background:var(--berry-s); color:#8E4249 }
+.freveal { font-family:var(--mono); font-size:1.5rem; color:var(--sage-d);
+  margin-top:16px; font-weight:600 }
+.fhint { color:var(--ink2); font-size:.95rem; margin-top:12px; background:#FFFDFA;
+  border:1px solid var(--line); border-radius:12px; padding:10px 13px; line-height:1.5 }
 
-.actions {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  margin-top: 16px;
-}
+.centerRow { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:16px }
+.centered { text-align:center; margin:6px 0 0 }
+.allRight { text-align:center; color:var(--sage-d); font-weight:600 }
+.missRow { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:10px }
+.missBox { background:var(--sage-s); border:1px solid #cfe0ca; border-radius:8px;
+  padding:.15rem .55rem; color:var(--sage-d); font-family:var(--mono); font-weight:600 }
 
-.answer {
-  font: inherit;
-  font-family: var(--mono);
-  font-size: 1.5rem;
-  width: 6rem;
-  text-align: center;
-  padding: 0.4rem 0.5rem;
-  border: 1px solid var(--line2);
-  border-radius: 12px;
-  background: var(--paper);
-  margin-right: 10px;
-}
-
-.answer:focus {
-  outline: 2px solid var(--clay-s);
-  border-color: var(--clay);
-}
-
-.answer.ok {
-  border-color: var(--sage);
-  background: var(--sage-s);
-  color: var(--sage-d);
-}
-
-.answer.bad {
-  border-color: var(--berry);
-  background: var(--berry-s);
-}
-
-.progress {
-  height: 5px;
-  background: var(--line);
-  border-radius: 999px;
-  overflow: hidden;
-  margin-bottom: 16px;
-}
-
-.progress i {
-  display: block;
-  height: 100%;
-  background: var(--sage);
-  transition: width 0.25s;
-}
-
-.summaryTitle {
-  font-size: 1.15rem;
-  margin-bottom: 12px;
-}
-
-.missList {
-  list-style: none;
-  margin: 0 0 18px;
-  padding: 0;
-  display: grid;
-  gap: 12px;
-}
-
-.missList li {
-  border-top: 1px solid var(--line);
-  padding-top: 10px;
-}
-
-.missQ {
-  display: block;
-  font-family: var(--mono);
-  font-size: 1.15rem;
-  color: var(--ink);
-}
-
-.missHook {
-  display: block;
-  font-size: 0.86rem;
-  color: var(--ink2);
-  margin-top: 3px;
-}
+.scorebar { display:flex; gap:9px; justify-content:center; flex-wrap:wrap;
+  margin-top:20px; padding-top:16px; border-top:1px solid var(--line) }
+.pill { font-size:.82rem; color:var(--ink2); background:var(--paper2);
+  border:1px solid var(--line); border-radius:999px; padding:.26rem .75rem }
+.pill.streak { background:var(--gold-s); border-color:#ecd9ac; color:var(--gold-d) }

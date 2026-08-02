@@ -30,7 +30,7 @@ import { addAnswer, addHint, addTitle, genAdd, genSub, subAnswer, subHint, subTi
 import { divAnswerText, divHint, divTitle, genDiv, genMul, mulHint, mulTitle } from "./topics/mul-div";
 import { decAnswer, decTitle, genDecAddSub } from "./topics/dec-addsub";
 import { factorsTitle, genFactors } from "./topics/factors";
-import { gcd, lcm, rd } from "./number";
+import { gcd, lcm, PLACES, rd, trimNum } from "./number";
 import { fmt, fracText } from "./format";
 import {
   exponentAnswer,
@@ -104,6 +104,12 @@ export interface TopicRuntime<P = unknown> {
   build?(p: P): StepsModel;
   /** Column-arithmetic equivalent of build(), for the five grid topics. */
   gridBuild?(p: P): GridModel | DivGridModel;
+  /** "or use your own numbers" — present on the four whole-number topics. */
+  custom?: {
+    op: string;
+    validate(a: number, b: number): string | null;
+    apply(a: number, b: number): P;
+  };
 }
 
 const num = (s: string): number => Number(String(s).replace(/,/g, "").trim());
@@ -122,6 +128,14 @@ const R: Record<string, TopicRuntime<any>> = {
     answer: (p) => fmt(addAnswer(p)),
     hint: addHint,
     gridBuild: buildAdd,
+    custom: {
+      op: "+",
+      validate: (a, b) =>
+        a < 1 || b < 1 || a > 999999 || b > 999999
+          ? "Use whole numbers under 1,000,000."
+          : null,
+      apply: (a, b) => ({ a, b }),
+    },
   },
   sub: {
     id: "sub",
@@ -132,6 +146,12 @@ const R: Record<string, TopicRuntime<any>> = {
     answer: (p) => fmt(subAnswer(p)),
     hint: subHint,
     gridBuild: buildSub,
+    custom: {
+      op: "−",
+      validate: (a, b) =>
+        a < 1 || b < 1 || b > a ? "The second number must be smaller than the first." : null,
+      apply: (a, b) => ({ a, b }),
+    },
   },
   mul: {
     id: "mul",
@@ -142,6 +162,14 @@ const R: Record<string, TopicRuntime<any>> = {
     answer: (p) => fmt(p.a * p.b),
     hint: mulHint,
     gridBuild: buildMul,
+    custom: {
+      op: "×",
+      validate: (a, b) =>
+        a < 1 || b < 1 || a > 99999 || b > 999
+          ? "Keep the first number under 100,000 and the second under 1,000."
+          : null,
+      apply: (a, b) => ({ a, b }),
+    },
   },
   div: {
     id: "div",
@@ -160,6 +188,14 @@ const R: Record<string, TopicRuntime<any>> = {
     answer: divAnswerText,
     hint: divHint,
     gridBuild: buildDiv,
+    custom: {
+      op: "÷",
+      validate: (a, b) =>
+        a < 1 || b < 1 || b > a || a > 999999 || b > 999
+          ? "The divisor must be smaller than the dividend."
+          : null,
+      apply: (a, b) => ({ dividend: a, divisor: b }),
+    },
   },
   "dec-addsub": {
     id: "dec-addsub",
@@ -169,6 +205,7 @@ const R: Record<string, TopicRuntime<any>> = {
     check: (p, v) => rd(num(v.q), 6) === rd(decAnswer(p), 6),
     answer: (p) => String(rd(decAnswer(p), 6)),
     gridBuild: buildDecAddSub,
+    hint: () => "Line up the decimal points and pad the shorter number with zeros.",
   },
   place: {
     id: "place",
@@ -178,6 +215,7 @@ const R: Record<string, TopicRuntime<any>> = {
     check: (p, v) => num(v.q) === placeAnswer(p),
     answer: (p) => fmt(placeAnswer(p)),
     build: buildPlace,
+    hint: (p) => `Look at the digit just right of the ${PLACES[p.place]} place. Everything after it becomes zero.`,
   },
   factors: {
     id: "factors",
@@ -190,6 +228,7 @@ const R: Record<string, TopicRuntime<any>> = {
     check: (p, v) => num(v.g) === gcd(p.a, p.b) && num(v.l) === lcm(p.a, p.b),
     answer: (p) => `GCF ${gcd(p.a, p.b)}, LCM ${lcm(p.a, p.b)}`,
     build: buildFactors,
+    hint: () => "The GCF divides into both. The LCM is what both divide into.",
   },
   pemdas: {
     id: "pemdas",
@@ -199,6 +238,7 @@ const R: Record<string, TopicRuntime<any>> = {
     check: (p, v) => num(v.q) === pemdasAnswer(p),
     answer: (p) => fmt(pemdasAnswer(p)),
     build: buildPemdas,
+    hint: () => "Scan the whole expression first. Parentheses, then exponents, then × and ÷ left to right, then + and − left to right.",
   },
   exponents: {
     id: "exponents",
@@ -208,6 +248,7 @@ const R: Record<string, TopicRuntime<any>> = {
     check: (p, v) => rd(num(v.q), 6) === rd(exponentAnswer(p), 6),
     answer: (p) => fmt(exponentAnswer(p)),
     build: buildExponents,
+    hint: (p) => p.kind === "pow" ? `Write it out longhand: ${Array(p.exp).fill(p.base).join(" × ")}.` : `Move the decimal point ${p.k} place${p.k === 1 ? "" : "s"} to the right.`,
   },
   "frac-equiv": {
     id: "frac-equiv",
@@ -217,6 +258,7 @@ const R: Record<string, TopicRuntime<any>> = {
     check: (p, v) => String(v.q ?? "").replace(/\s/g, "") === fracEquivAnswer(p),
     answer: fracEquivAnswer,
     build: buildFracEquiv,
+    hint: (p) => p.kind === "simplify" ? "Find the biggest number that divides into both, then divide both by it." : "Work out what the bottom was multiplied by, then do the same on top.",
   },
   "frac-mixed": {
     id: "frac-mixed",
@@ -227,6 +269,7 @@ const R: Record<string, TopicRuntime<any>> = {
       String(v.q ?? "").replace(/\s+/g, " ").trim() === fracMixedAnswer(p),
     answer: fracMixedAnswer,
     build: buildFracMixed,
+    hint: (p) => p.kind === "toMixed" ? "Divide the top by the bottom. The quotient is the whole number, the remainder stays on top." : "Whole × bottom, then add the top. The bottom never changes.",
   },
   "frac-addsub": {
     id: "frac-addsub",
@@ -242,6 +285,7 @@ const R: Record<string, TopicRuntime<any>> = {
       return fracText(n, d);
     },
     build: buildFracAddSub,
+    hint: (p) => p.d1 === p.d2 ? "Same bottom already — just combine the tops." : `Find the smallest number both ${p.d1} and ${p.d2} go into, rewrite both fractions over it, then combine the tops.`,
   },
   "frac-muldiv": {
     id: "frac-muldiv",
@@ -257,6 +301,7 @@ const R: Record<string, TopicRuntime<any>> = {
       return fracText(n, d);
     },
     build: buildFracMulDiv,
+    hint: (p) => p.kind === "mul" ? "Tops together, bottoms together. Convert mixed numbers first." : "Flip the second fraction, change ÷ to ×, then go straight across.",
   },
   "dec-muldiv": {
     id: "dec-muldiv",
@@ -266,6 +311,7 @@ const R: Record<string, TopicRuntime<any>> = {
     check: (p, v) => rd(num(v.q), 4) === rd(decMulDivAnswer(p), 4),
     answer: (p) => String(rd(decMulDivAnswer(p), 4)),
     build: buildDecMulDiv,
+    hint: (p) => p.kind === "mul" ? "Multiply as whole numbers, then count the decimal places in the question." : "Move the point in the divisor until it is whole, and move the other number the same amount.",
   },
   percent: {
     id: "percent",
@@ -277,6 +323,7 @@ const R: Record<string, TopicRuntime<any>> = {
       percentAnswer(p).replace(/%$/, ""),
     answer: percentAnswer,
     build: buildPercent,
+    hint: (p) => p.kind === "of" ? `10% of ${fmt(p.n)} is ${trimNum(rd(p.n / 10, 4))}. Build the answer from that.` : p.kind === "whatpct" ? "Divide the part by the whole, then multiply by 100." : "Dividing by 100 moves the decimal point two places left.",
   },
   ratio: {
     id: "ratio",
@@ -286,6 +333,7 @@ const R: Record<string, TopicRuntime<any>> = {
     check: (p, v) => num(v.q) === ratioAnswer(p),
     answer: (p) => fmt(ratioAnswer(p)),
     build: buildRatio,
+    hint: (p) => p.kind === "unit" ? "Find the cost of one first, then multiply." : "Work out the scale factor, then apply it to the other number.",
   },
   integers: {
     id: "integers",
@@ -295,6 +343,7 @@ const R: Record<string, TopicRuntime<any>> = {
     check: (p, v) => num(v.q) === integerAnswer(p),
     answer: (p) => String(integerAnswer(p)),
     build: buildIntegers,
+    hint: (p) => p.kind === "mul" || p.kind === "div" ? "Work out the size first, then count the negatives — odd means the answer is negative." : "Rewrite any subtraction as adding the opposite, then think about the number line.",
   },
   equations: {
     id: "equations",
@@ -304,6 +353,7 @@ const R: Record<string, TopicRuntime<any>> = {
     check: (p, v) => num(v.q) === equationAnswer(p),
     answer: (p) => String(equationAnswer(p)),
     build: buildEquations,
+    hint: () => "Get x by itself. Whatever you do to one side you must do to the other.",
   },
   geometry: {
     id: "geometry",
@@ -313,6 +363,7 @@ const R: Record<string, TopicRuntime<any>> = {
     check: (p, v) => rd(num(v.q), 6) === rd(geometryAnswer(p), 6),
     answer: (p) => String(rd(geometryAnswer(p), 6)),
     build: buildGeometry,
+    hint: (p) => ({ area: "Length × width.", perim: "Add all four sides.", tri: "Base × height, then halve it.", para: "Base × perpendicular height.", vol: "One layer, then multiply by the depth.", ell: "Whole rectangle minus the missing corner." })[p.kind as "area" | "perim" | "tri" | "para" | "vol" | "ell"],
   },
 };
 /* eslint-enable @typescript-eslint/no-explicit-any */

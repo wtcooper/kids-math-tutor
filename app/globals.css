@@ -175,3 +175,17 @@ a {
   place-items: center;
   padding: 32px 16px;
 }
+
+/*
+ * Printing shows the worksheet only. The sheet itself is display:none on screen and
+ * flipped on inside its own module's print block.
+ */
+@media print {
+  body {
+    background: #fff;
+    background-image: none;
+  }
+  .wrap > *:not([data-print]) {
+    display: none !important;
+  }
+}

@@ -94,9 +94,17 @@ export function WatchIt({ model }: { model: StepsModel }) {
         >
           Next step →
         </button>
+        <button
+          type="button"
+          className="btn ghost sm"
+          disabled={atEnd}
+          onClick={() => setIdx(last)}
+        >
+          Show all
+        </button>
         {idx > 0 ? (
           <button type="button" className="btn ghost sm" onClick={() => setIdx(0)}>
-            Start over
+            Restart
           </button>
         ) : null}
         <span className={styles.counter}>

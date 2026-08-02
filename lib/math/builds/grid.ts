@@ -352,6 +352,7 @@ export interface DivGridModel extends Omit<GridModel, "kind"> {
     col: number;
   }[];
   remainder: number;
+  dividend: number;
 }
 
 export function buildDiv(p: DivProblem): DivGridModel {
@@ -409,6 +410,7 @@ export function buildDiv(p: DivProblem): DivGridModel {
       col: s.i,
     })),
     remainder: m.remainder,
+    dividend: p.dividend,
     // D-M-S-B strip: one entry per step, all four moves in order.
     dmsb: m.steps.map(() => 0 as const),
   };

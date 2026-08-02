@@ -6,27 +6,27 @@ import { BY_ID, GROUPS, TOPICS, topicsInGroup } from "@/lib/topics";
 import { ABOUT } from "@/lib/topics.about";
 import { GAMES } from "@/lib/games";
 import { runtimeFor } from "@/lib/math/registry";
+import { buildWorksheet, type Worksheet } from "@/lib/math/worksheet";
 import type { FactKind } from "@/lib/math/facts";
 import { PracticeMode } from "./PracticeMode";
 import { DrillMode, LearnMode } from "./FlashcardMode";
 import { StepsWorkspace } from "./StepsWorkspace";
 import { GridWorkspace } from "./GridWorkspace";
+import { CustomNumbers } from "./CustomNumbers";
+import { WorksheetSheet } from "./Worksheet";
 import styles from "./TutorApp.module.css";
 
 /**
- * The tutor, as one page.
+ * The tutor, as one page — the same shape as the original single-file app.
  *
- * Topic and level are dropdowns exactly as in the original — a grouped <select> of all 21
- * topics and a second one for that topic's levels. Modes are tabs, and which tabs exist
- * depends on the engine: flashcards get Learn/Drill, column arithmetic gets Watch/You
- * try/Practice, and everything else adds Picture it.
- *
- * State lives here rather than in the URL so switching topics is instant, but the page
- * still accepts ?topic=&level=&mode= so the games can deep-link in.
+ * Topic and level are dropdowns; modes are tabs; the header carries "New problem" (or
+ * "Reshuffle deck" for flashcards) and "Print a worksheet"; and the four whole-number
+ * topics get the "use your own numbers" box so she can work from her actual homework.
  */
 
 type Mode = "learn" | "drill" | "picture" | "watch" | "try" | "practice";
 
+const ALL_MODES: Mode[] = ["learn", "drill", "picture", "watch", "try", "practice"];
 const DEFAULT_TOPIC = "facts-mul";
 
 export function TutorApp({
@@ -45,13 +45,17 @@ export function TutorApp({
   const [levelMemo, setLevelMemo] = useState<Record<string, number>>(() =>
     initialTopicId && initialLevel ? { [initialTopicId]: initialLevel } : {},
   );
-  const [showAbout, setShowAbout] = useState(false);
+  // Bumping this regenerates the current problem — the header's "New problem".
+  const [nonce, setNonce] = useState(0);
+  // A problem forced in from outside: "use your own numbers", or "walk me through it"
+  // handing Practice's current problem to Watch it.
+  const [forced, setForced] = useState<unknown>(null);
+  const [sheet, setSheet] = useState<Worksheet | null>(null);
 
   const topic = BY_ID[topicId];
   const runtime = useMemo(() => runtimeFor(topicId), [topicId]);
   const isFacts = topic.engine === "facts";
   const kind: FactKind = topicId === "facts-div" ? "div" : "mul";
-
   const level = Math.min(levelMemo[topicId] ?? 1, topic.levels.length);
 
   const modes: [Mode, string][] = isFacts
@@ -67,40 +71,66 @@ export function TutorApp({
           ["practice", "Practice"],
         ]
       : runtime?.gridBuild
-        ? // Column arithmetic has no Picture it: the original's add/sub/mul/div pictures
-          // returned null, because the grid itself is the picture.
-          [
+        ? // add / sub / dec-addsub had picture() returning null in the original — the
+          // grid is the picture. mul and div did have one, and they are the two
+          // interactive ones.
+          ((["mul", "div"].includes(topicId)
+            ? [["picture", "Picture it"] as [Mode, string]]
+            : []) as [Mode, string][]).concat([
             ["watch", "Watch it"],
             ["try", "You try"],
             ["practice", "Practice"],
-          ]
+          ])
         : [["practice", "Practice"]];
 
   const [mode, setMode] = useState<Mode>(() => {
     const wanted = initialMode as Mode | undefined;
-    return wanted && ["learn", "drill", "picture", "watch", "try", "practice"].includes(wanted)
-      ? wanted
-      : "learn";
+    return wanted && ALL_MODES.includes(wanted) ? wanted : "learn";
   });
-
   const activeMode: Mode = modes.some(([m]) => m === mode) ? mode : modes[0][0];
 
-  const switchTopic = useCallback(
-    (next: string) => {
-      setTopicId(next);
-      const nextTopic = BY_ID[next];
-      // Reset to a mode this engine actually has, the way switchTopic did.
-      setMode(nextTopic.engine === "facts" ? "learn" : "watch");
-    },
-    [],
-  );
+  const switchTopic = useCallback((next: string) => {
+    setTopicId(next);
+    setForced(null);
+    // Reset to a mode this engine actually has, the way switchTopic did.
+    setMode(BY_ID[next].engine === "facts" ? "learn" : "watch");
+  }, []);
 
   const setLevel = useCallback(
-    (n: number) => setLevelMemo((m) => ({ ...m, [topicId]: n })),
+    (n: number) => {
+      setLevelMemo((m) => ({ ...m, [topicId]: n }));
+      setForced(null);
+    },
     [topicId],
   );
 
+  const newProblem = useCallback(() => {
+    setForced(null);
+    setNonce((n) => n + 1);
+  }, []);
+
+  /** Practice's "Walk me through it": same problem, shown step by step. */
+  const walkThrough = useCallback((problem: unknown) => {
+    setForced(problem);
+    setMode("watch");
+  }, []);
+
+  const useOwnNumbers = useCallback(
+    (problem: unknown) => {
+      setForced(problem);
+      if (activeMode === "practice") setMode("watch");
+    },
+    [activeMode],
+  );
+
+  const printWorksheet = useCallback(() => {
+    setSheet(buildWorksheet(topicId, level));
+    // Let React paint the sheet before the print dialog reads the document.
+    requestAnimationFrame(() => requestAnimationFrame(() => window.print()));
+  }, [topicId, level]);
+
   const game = GAMES[topicId];
+  const workspaceKey = `${topicId}-${level}-${activeMode}-${nonce}-${forced ? "forced" : "gen"}`;
 
   return (
     <main className="wrap">
@@ -118,6 +148,12 @@ export function TutorApp({
               Play {game.name}
             </Link>
           ) : null}
+          <button type="button" className="btn ghost" onClick={printWorksheet}>
+            Print a worksheet
+          </button>
+          <button type="button" className="btn primary" onClick={newProblem}>
+            {isFacts ? "Reshuffle deck" : "New problem"}
+          </button>
           <a className="btn ghost sm" href="/sign-out">
             Sign out
           </a>
@@ -160,17 +196,14 @@ export function TutorApp({
         </label>
       </div>
 
-      <div className={styles.aboutRow}>
-        <button
-          type="button"
-          className={styles.aboutToggle}
-          onClick={() => setShowAbout((v) => !v)}
-          aria-expanded={showAbout}
-        >
-          What is this topic about?
-        </button>
-      </div>
-      {showAbout ? <p className={styles.aboutBody}>{ABOUT[topicId]}</p> : null}
+      {runtime?.custom && !isFacts ? (
+        <CustomNumbers spec={runtime.custom} onSet={useOwnNumbers} />
+      ) : null}
+
+      <details className={styles.about}>
+        <summary>What is this topic about?</summary>
+        <div className={styles.aboutBody}>{ABOUT[topicId]}</div>
+      </details>
 
       <div className={styles.modes}>
         {modes.map(([m, label]) => (
@@ -188,32 +221,44 @@ export function TutorApp({
       <section className="card">
         {isFacts ? (
           activeMode === "drill" ? (
-            <DrillMode key={`${kind}-${level}`} kind={kind} level={level} />
+            <DrillMode key={`${kind}-${level}-${nonce}`} kind={kind} level={level} />
           ) : (
             <LearnMode key={`${kind}-${level}`} kind={kind} level={level} />
           )
         ) : runtime?.gridBuild && activeMode !== "practice" ? (
           <GridWorkspace
-            key={`${topicId}-${level}-${activeMode}`}
-            runtime={runtime}
-            level={level}
-            mode={activeMode === "try" ? "try" : "watch"}
-          />
-        ) : runtime?.build && activeMode !== "practice" ? (
-          <StepsWorkspace
-            key={`${topicId}-${level}-${activeMode}`}
+            key={workspaceKey}
             runtime={runtime}
             level={level}
             mode={activeMode as "picture" | "watch" | "try"}
+            forcedProblem={forced}
+            onNewProblem={newProblem}
+          />
+        ) : runtime?.build && activeMode !== "practice" ? (
+          <StepsWorkspace
+            key={workspaceKey}
+            runtime={runtime}
+            level={level}
+            mode={activeMode as "picture" | "watch" | "try"}
+            forcedProblem={forced}
+            onNewProblem={newProblem}
           />
         ) : runtime ? (
-          <PracticeMode key={`${topicId}-${level}`} runtime={runtime} level={level} />
+          <PracticeMode
+            key={`${topicId}-${level}-${nonce}`}
+            runtime={runtime}
+            level={level}
+            onWalkThrough={runtime.build || runtime.gridBuild ? walkThrough : undefined}
+          />
         ) : null}
       </section>
 
       <p className={styles.footNote}>
         {TOPICS.length} topics · {TOPICS.reduce((n, tp) => n + tp.levels.length, 0)} levels
       </p>
+
+      {/* Hidden on screen; the print stylesheet shows only this. */}
+      <WorksheetSheet sheet={sheet} />
     </main>
   );
 }

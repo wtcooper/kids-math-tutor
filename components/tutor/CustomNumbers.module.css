@@ -1,0 +1,9 @@
+.wrap { margin:10px 0 14px }
+.row { display:flex; gap:8px; align-items:center; flex-wrap:wrap }
+.label { font-size:.85rem; color:var(--ink3) }
+.box { width:6.5rem; font:inherit; font-family:var(--mono); font-size:1rem;
+  padding:.35rem .55rem; border:1px solid var(--line2); border-radius:10px;
+  background:var(--paper); text-align:center }
+.box:focus { outline:2px solid var(--clay-s); border-color:var(--clay) }
+.op { font-family:var(--mono); font-size:1.05rem; color:var(--ink2) }
+.error { margin:6px 0 0; font-size:.85rem; color:var(--berry) }

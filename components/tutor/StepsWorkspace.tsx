@@ -17,12 +17,17 @@ export function StepsWorkspace({
   runtime,
   level,
   mode,
+  forcedProblem,
+  onNewProblem,
 }: {
   runtime: TopicRuntime;
   level: number;
   mode: "picture" | "watch" | "try";
+  /** Set by "use your own numbers" or Practice's "walk me through it". */
+  forcedProblem?: unknown;
+  onNewProblem?: () => void;
 }) {
-  const [problem, setProblem] = useState(() => runtime.gen(level, systemRng));
+  const [problem, setProblem] = useState(() => forcedProblem ?? runtime.gen(level, systemRng));
   const [stats, setStats] = useState({ solved: 0, clean: 0 });
   const [nonce, setNonce] = useState(0);
 
@@ -31,7 +36,11 @@ export function StepsWorkspace({
   const newProblem = useCallback(() => {
     setProblem(runtime.gen(level, systemRng));
     setNonce((n) => n + 1);
-  }, [runtime, level]);
+    onNewProblem?.();
+  }, [runtime, level, onNewProblem]);
+
+  /** Same problem, cleared — You try's "Clear". */
+  const restart = useCallback(() => setNonce((n) => n + 1), []);
 
   const onSolved = useCallback((clean: boolean) => {
     setStats((s) => ({ solved: s.solved + 1, clean: s.clean + (clean ? 1 : 0) }));
@@ -43,9 +52,16 @@ export function StepsWorkspace({
     <div>
       <div className={styles.head}>
         <p className={styles.title}>{model.title}</p>
-        <button type="button" className="btn sm" onClick={newProblem}>
-          New problem
-        </button>
+        <div className={styles.headBtns}>
+          {mode === "try" ? (
+            <button type="button" className="btn ghost sm" onClick={restart}>
+              Clear
+            </button>
+          ) : null}
+          <button type="button" className="btn sm" onClick={newProblem}>
+            {mode === "try" ? "Another one" : "New problem"}
+          </button>
+        </div>
       </div>
 
       {mode === "picture" ? (
