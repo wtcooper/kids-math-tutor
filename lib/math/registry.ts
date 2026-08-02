@@ -13,6 +13,7 @@ import type { Rng } from "./rng";
 import type { StepsModel } from "./types";
 import type { DivGridModel, GridModel } from "./builds/grid";
 import { buildAdd, buildDecAddSub, buildDiv, buildMul, buildSub } from "./builds/grid";
+import { buildDecAddSubPicture } from "./builds/dec-picture";
 import { buildFactors } from "./topics/factors";
 import { buildExponents, buildPemdas, buildPlace } from "./builds/whole-numbers";
 import { buildFracAddSub, buildFracEquiv, buildFracMixed, buildFracMulDiv } from "./builds/fractions";
@@ -205,6 +206,9 @@ const R: Record<string, TopicRuntime<any>> = {
     check: (p, v) => rd(num(v.q), 6) === rd(decAnswer(p), 6),
     answer: (p) => String(rd(decAnswer(p), 6)),
     gridBuild: buildDecAddSub,
+    // Picture-only: the walkthrough is the column grid, but the original had an
+    // explanatory picture here and it is worth keeping.
+    build: buildDecAddSubPicture,
     hint: () => "Line up the decimal points and pad the shorter number with zeros.",
   },
   place: {

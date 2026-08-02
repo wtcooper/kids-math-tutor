@@ -200,25 +200,33 @@ export function buildExponents(prob: ExponentProblem): StepsModel {
     }
     const ans = acc;
 
-    const steps = chain.map((v, i) => ({
-      label:
-        i === 0
-          ? `Start with one ${b}`
-          : `Multiply by ${b} again — that is ${i + 1} of them`,
-      say: text(
-        i === 0
-          ? `The exponent counts how many ${b}s get multiplied together, not what you multiply by.`
-          : `${i === 1 ? `${b} × ${b}` : `${chain[i - 1]} × ${b}`} = ${v}.`,
-      ),
-      show: [
-        line(
-          t(Array.from({ length: i + 1 }, () => String(b)).join(" × ")),
-          op("="),
-          i === chain.length - 1 ? grn(String(v)) : hi(String(v)),
+    // The opening step explains what the notation means and asks nothing — the ask
+    // count has to match the original, and more importantly the first thing she meets
+    // should be the idea, not a box.
+    const steps: StepsModel["steps"] = [
+      {
+        label: "Write out what the exponent means",
+        say: parseRich(
+          `The little ${e} says "use ${b} as a factor ${e} times." It does <b>not</b> mean ${b} × ${e} — that would only be ${b * e}.`,
         ),
-      ],
-      ask: [{ label: "Value", expect: String(v), w: 7 }],
-    }));
+        show: [
+          bigLine(
+            { t: "pow", base: String(b), exp: String(e) },
+            op("="),
+            t(Array.from({ length: e }, () => String(b)).join(" × ")),
+          ),
+        ],
+      },
+    ];
+    // chain[0] is b itself; the walk starts at the second factor.
+    chain.slice(1).forEach((v, i) => {
+      steps.push({
+        label: `Multiply by ${b} again  (${i + 2} factors so far)`,
+        say: text(`${fmt(chain[i])} × ${b} = ${fmt(v)}.`),
+        show: [line(t(fmt(chain[i])), op("×"), t(String(b)), op("="), hi(fmt(v)))],
+        ask: [{ label: "Running total", expect: String(v), w: 6 }],
+      });
+    });
 
     return {
       kind: "steps",

@@ -82,6 +82,9 @@ describe("step models are complete and never leak an undefined", () => {
     for (const topic of nonFacts) {
       const rt = runtimeFor(topic.id)!;
       if (!rt.build) continue;
+      // A topic with BOTH builders keeps its walkthrough in the grid model and uses
+      // build() only for the picture, so it legitimately has no steps.
+      const pictureOnly = Boolean(rt.gridBuild);
       for (let lvl = 1; lvl <= topic.levels.length; lvl++) {
         const rng = makeRng(mulberry32(4000 + lvl));
         for (let i = 0; i < SAMPLES; i++) {
@@ -89,7 +92,11 @@ describe("step models are complete and never leak an undefined", () => {
           const tag = `${topic.id} L${lvl} — ${rt.title(p)}`;
           const m = rt.build(p);
 
-          expect(m.steps.length, tag).toBeGreaterThan(0);
+          if (pictureOnly) {
+            expect(m.picture, `${tag} is picture-only but has no picture`).toBeTruthy();
+          } else {
+            expect(m.steps.length, tag).toBeGreaterThan(0);
+          }
           expect(m.answerText, tag).toBeTruthy();
           expect(m.title, tag).toBeTruthy();
 

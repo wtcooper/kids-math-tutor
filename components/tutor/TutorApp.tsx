@@ -74,7 +74,7 @@ export function TutorApp({
         ? // add / sub / dec-addsub had picture() returning null in the original — the
           // grid is the picture. mul and div did have one, and they are the two
           // interactive ones.
-          ((["mul", "div"].includes(topicId)
+          ((["mul", "div", "dec-addsub"].includes(topicId)
             ? [["picture", "Picture it"] as [Mode, string]]
             : []) as [Mode, string][]).concat([
             ["watch", "Watch it"],

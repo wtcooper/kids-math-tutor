@@ -249,7 +249,9 @@ export function buildMul(p: MulProblem): GridModel {
   }));
   bottom.push({ col: right(m.A.length) - 1, text: "×", kind: "sign" });
 
+  const carry: Cell[] = [];
   const rows: GridRow[] = [
+    { kind: "carry", cells: carry },
     { kind: "top", cells: top },
     { kind: "bottom", cells: bottom, underline: true },
   ];
@@ -258,63 +260,89 @@ export function buildMul(p: MulProblem): GridModel {
   const narration: GridModel["narration"] = [];
   let phase = 0;
 
-  m.parts.forEach((part) => {
+  m.parts.forEach((part, partIdx) => {
     const cells: Cell[] = [];
-    // Placeholder zeros push each partial product one place further left.
-    for (let z = 0; z < part.j; z++) {
-      cells.push({ col: right(z + 1), text: "0", kind: "placeholder", from: phase });
+
+    // A shift phase of its own for every row after the first — the placeholder zeros are
+    // the thing kids skip, so they get their own step and their own explanation.
+    if (part.j > 0) {
+      for (let z = 0; z < part.j; z++) {
+        cells.push({ col: right(z + 1), text: "0", kind: "placeholder", from: phase });
+      }
+      narration.push({
+        label: `Shift across for the ${part.bd}`,
+        main: `This ${part.bd} is really ${part.bd}${"0".repeat(part.j)}, so its row starts ${part.j} place${part.j === 1 ? "" : "s"} to the left.`,
+        sub: "The placeholder zero is not decoration — it is what makes the place value right.",
+      });
+      phase++;
     }
-    part.digits.split("").forEach((d, i) => {
-      const offset = part.digits.length - i + part.j;
+
+    // Then one phase per digit of the partial product, exactly as the original walked it.
+    part.digitSteps.forEach((d, x) => {
+      const offset = x + 1 + part.j;
       cells.push({
         col: right(offset),
-        text: d,
+        text: String(d.write),
         kind: "answer",
         from: phase,
         slot: slots.length,
       });
       slots.push({
         idx: slots.length,
-        expect: d,
+        expect: String(d.write),
         phase,
-        label: `${part.bd} × row, digit ${i + 1}`,
+        label: `${part.bd} × row, digit ${x + 1}`,
       });
+
+      if (!d.last && d.carryOut && d.carryOut > 0) {
+        carry.push({
+          col: right(offset + 1),
+          text: String(d.carryOut),
+          kind: "carry",
+          from: phase,
+        });
+      }
+
+      narration.push(
+        d.last
+          ? {
+              label: "Write the last carry",
+              main: `Nothing left to multiply, so the carried ${d.carryIn} goes straight down.`,
+            }
+          : {
+              label: `${d.ad} × ${part.bd}${d.carryIn ? ` , plus ${d.carryIn} carried` : ""}`,
+              main:
+                d.carryIn > 0
+                  ? `${d.ad} × ${part.bd} = ${d.raw}, plus the ${d.carryIn} carried makes ${d.tot}.`
+                  : `${d.ad} × ${part.bd} = ${d.raw}.`,
+              sub:
+                d.carryOut && d.carryOut > 0
+                  ? `Write the ${d.write} and carry the ${d.carryOut}.`
+                  : undefined,
+            },
+      );
+      phase++;
     });
-    narration.push({
-      label:
-        part.j === 0
-          ? `Multiply everything by the ${part.bd}`
-          : `Now the ${part.bd} — shift one place left first`,
-      main: `${fmt(p.a)} × ${part.bd} = ${fmt(part.bd * p.a)}${part.j ? `, then add ${part.j} zero${part.j === 1 ? "" : "s"} → ${fmt(part.value)}` : ""}.`,
-      sub:
-        part.j > 0
-          ? "The placeholder zero is there because this digit is worth ten times more."
-          : undefined,
-    });
+
     rows.push({
       kind: "partial",
       cells,
-      from: phase,
-      underline: m.parts.length > 1 && part.j === m.parts.length - 1,
+      underline: m.parts.length > 1 && partIdx === m.parts.length - 1,
     });
-    phase++;
   });
 
   if (m.parts.length > 1) {
-    const sumCells: Cell[] = String(m.product)
-      .split("")
-      .map((d, i, arr) => ({
-        col: right(arr.length - i),
-        text: d,
-        kind: "answer" as const,
-        from: phase,
-        slot: slots.length + i,
-      }));
-    String(m.product)
-      .split("")
-      .forEach((d, i) => {
-        slots.push({ idx: slots.length, expect: d, phase, label: `Total digit ${i + 1}` });
-      });
+    const digits = String(m.product).split("");
+    const sumCells: Cell[] = digits.map((d, i) => ({
+      col: right(digits.length - i),
+      text: d,
+      kind: "answer" as const,
+      from: phase,
+      slot: slots.length + i,
+    }));
+    digits.forEach((d, i) => {
+      slots.push({ idx: slots.length, expect: d, phase, label: `Total digit ${i + 1}` });
+    });
     rows.push({ kind: "sum", cells: sumCells, from: phase });
     narration.push({
       label: "Add the partial products",
@@ -353,42 +381,122 @@ export interface DivGridModel extends Omit<GridModel, "kind"> {
   }[];
   remainder: number;
   dividend: number;
+  /** Which of D-M-S-B each phase belongs to. */
+  dmsb: (0 | 1 | 2 | 3)[];
+  /** What each phase reveals, so the bracket can draw progressively. */
+  reveals: { step: number; part: "skip" | "q" | "p" | "r" | "b" }[];
 }
 
 export function buildDiv(p: DivProblem): DivGridModel {
   const m: DivModel = buildDivModel(p.dividend, p.divisor);
+  const D = p.divisor;
   const slots: GridSlot[] = [];
   const narration: GridModel["narration"] = [];
+  /** Which of D-M-S-B each phase is, for the strip. */
+  const dmsb: (0 | 1 | 2 | 3)[] = [];
+  /** How much of each division step is revealed at each phase. */
+  const reveals: { step: number; part: "skip" | "q" | "p" | "r" | "b" }[] = [];
+
+  let phase = 0;
 
   m.steps.forEach((s, i) => {
-    if (!s.hidden) {
-      slots.push({
-        idx: slots.length,
-        expect: String(s.q),
-        phase: i,
-        label: `Quotient digit ${i + 1}`,
+    if (s.hidden) {
+      // The 372 ÷ 5 case: nothing goes above the first digit, and the original explains
+      // why rather than silently skipping it.
+      const next = m.steps[i + 1];
+      narration.push({
+        label: "Look further",
+        main: `Does ${D} fit into ${s.cur}? No — ${D} is bigger than ${s.cur}.`,
+        sub: `So take the first two digits together and ask about ${next ? next.cur : s.cur} instead. Nothing is written above the ${s.cur} yet.`,
       });
+      dmsb.push(0);
+      reveals.push({ step: i, part: "skip" });
+      phase++;
+      return;
     }
+
+    // D — divide
     narration.push({
-      label: s.hidden
-        ? `${s.cur} is smaller than ${p.divisor} — nothing goes above it yet`
-        : `How many ${p.divisor}s fit into ${s.cur}?`,
-      main: s.hidden
-        ? `You cannot make a whole ${p.divisor} out of ${s.cur}, so carry the digit along and try again with the next one.`
-        : `${p.divisor} goes into ${s.cur} ${s.q} time${s.q === 1 ? "" : "s"}. ${s.q} × ${p.divisor} = ${s.p}, and ${s.cur} − ${s.p} = ${s.r}.`,
+      label: "Divide",
+      main: `How many ${D}s fit into ${s.cur}? ${s.q}. Write it above the ${PLACE_NAMES[m.n - 1 - i] ?? "next"} digit.`,
       sub:
-        s.bring !== null && !s.hidden
-          ? `Bring down the ${s.bring} and go round again.`
-          : undefined,
+        s.q === 0
+          ? `${D} is bigger than ${s.cur}, so it fits zero times. Write the 0 anyway — it holds the place.`
+          : `Check: ${D} × ${s.q} = ${s.p} which fits, but ${D} × ${s.q + 1} = ${D * (s.q + 1)} is too big.`,
     });
+    dmsb.push(0);
+    reveals.push({ step: i, part: "q" });
+    slots.push({
+      idx: slots.length,
+      expect: String(s.q),
+      phase,
+      label: `How many ${D}s fit into ${s.cur}?`,
+    });
+    phase++;
+
+    // M — multiply
+    narration.push({
+      label: "Multiply",
+      main: `${s.q} × ${D} = ${s.p}. Write ${s.p} underneath ${s.cur}.`,
+      sub: `That is the part of ${s.cur} we can actually hand out in groups of ${D}.`,
+    });
+    dmsb.push(1);
+    reveals.push({ step: i, part: "p" });
+    // One box per digit of the product — she writes it out, not just the answer.
+    String(s.p)
+      .split("")
+      .forEach((d, x) =>
+        slots.push({
+          idx: slots.length,
+          expect: d,
+          phase,
+          label: `${s.q} × ${D}, digit ${x + 1}`,
+        }),
+      );
+    phase++;
+
+    // S — subtract
+    narration.push({
+      label: "Subtract",
+      main: `${s.cur} − ${s.p} = ${s.r}. That is what is left over.`,
+      sub: `${s.r} is smaller than ${D}, which is exactly what we want.`,
+    });
+    dmsb.push(2);
+    reveals.push({ step: i, part: "r" });
+    String(s.r)
+      .split("")
+      .forEach((d, x) =>
+        slots.push({
+          idx: slots.length,
+          expect: d,
+          phase,
+          label: `${s.cur} − ${s.p}, digit ${x + 1}`,
+        }),
+      );
+    phase++;
+
+    // B — bring down
+    if (s.bring !== null) {
+      const next = m.steps[i + 1];
+      narration.push({
+        label: "Bring down",
+        main: `Bring down the next digit, ${s.bring}. Now we are working with ${next ? next.cur : s.bring}.`,
+        sub: "Then start the cycle over: divide, multiply, subtract, bring down.",
+      });
+      dmsb.push(3);
+      reveals.push({ step: i, part: "b" });
+      phase++;
+    }
   });
 
+  const ansText = m.remainder > 0 ? `${fmt(m.quotient)} remainder ${m.remainder}` : fmt(m.quotient);
   narration.push({
     label: "Done",
-    main:
+    main: `${fmt(m.dividend)} ÷ ${D} = ${ansText}.`,
+    sub:
       m.remainder > 0
-        ? `${fmt(m.quotient)} remainder ${m.remainder}.`
-        : `It divides exactly: ${fmt(m.quotient)}.`,
+        ? `Check it: ${fmt(m.quotient)} × ${D} = ${fmt(m.quotient * D)}, plus ${m.remainder} = ${fmt(m.dividend)}. ✓`
+        : `Check it: ${fmt(m.quotient)} × ${D} = ${fmt(m.dividend)}. ✓`,
   });
 
   return {
@@ -400,6 +508,7 @@ export function buildDiv(p: DivProblem): DivGridModel {
     slots,
     answerText: m.remainder ? `${fmt(m.quotient)} r${m.remainder}` : fmt(m.quotient),
     divisor: p.divisor,
+    dividend: p.dividend,
     dividendDigits: m.ds,
     divSteps: m.steps.map((s) => ({
       quotient: s.q,
@@ -410,8 +519,15 @@ export function buildDiv(p: DivProblem): DivGridModel {
       col: s.i,
     })),
     remainder: m.remainder,
-    dividend: p.dividend,
-    // D-M-S-B strip: one entry per step, all four moves in order.
-    dmsb: m.steps.map(() => 0 as const),
+    dmsb,
+    reveals,
   };
 }
+
+const PLACE_NAMES = [
+  "ones",
+  "tens",
+  "hundreds",
+  "thousands",
+  "ten-thousands",
+] as const;

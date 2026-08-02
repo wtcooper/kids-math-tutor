@@ -120,8 +120,15 @@ function Grid({
 }
 
 function DivGrid({ model, reveal }: { model: DivGridModel; reveal: number }) {
-  const steps = model.divSteps;
-  const visible = steps.filter((s, i) => i < reveal && !s.hidden);
+  // Each phase reveals one piece: the quotient digit, the product, the remainder, or the
+  // brought-down digit. Walking the phases up to `reveal` says exactly what is on screen.
+  const shown = model.divSteps.map(() => ({ q: false, p: false, r: false, b: false }));
+  for (let i = 0; i < Math.min(reveal, model.reveals.length); i++) {
+    const rv = model.reveals[i];
+    if (rv.part === "skip") continue;
+    shown[rv.step][rv.part] = true;
+  }
+  const finished = reveal > model.reveals.length;
 
   return (
     <div className={styles.wrap}>
@@ -129,10 +136,12 @@ function DivGrid({ model, reveal }: { model: DivGridModel; reveal: number }) {
         <div className={styles.divisor}>{model.divisor}</div>
         <div className={styles.bracket}>
           <div className={styles.quotient}>
-            {steps.map((s, i) =>
-              s.hidden ? null : (
+            {model.divSteps.map((s, i) =>
+              s.hidden ? (
+                <span key={i} className={styles.qDigit} />
+              ) : (
                 <span key={i} className={styles.qDigit}>
-                  {i < reveal ? s.quotient : ""}
+                  {shown[i].q ? s.quotient : ""}
                 </span>
               ),
             )}
@@ -144,20 +153,24 @@ function DivGrid({ model, reveal }: { model: DivGridModel; reveal: number }) {
               </span>
             ))}
           </div>
-          {visible.map((s, i) => (
-            <div key={i} className={styles.divRow}>
-              <span className={styles.divProduct}>− {s.product}</span>
-              <span className={styles.divRemainder}>
-                = {s.remainder}
-                {s.bring !== null ? (
-                  <span className={styles.brought}> ↓{s.bring}</span>
+          {model.divSteps.map((s, i) =>
+            s.hidden || !shown[i].p ? null : (
+              <div key={i} className={styles.divRow}>
+                <span className={styles.divProduct}>− {s.product}</span>
+                {shown[i].r ? (
+                  <span className={styles.divRemainder}>
+                    = {s.remainder}
+                    {shown[i].b && s.bring !== null ? (
+                      <span className={styles.brought}> ↓{s.bring}</span>
+                    ) : null}
+                  </span>
                 ) : null}
-              </span>
-            </div>
-          ))}
+              </div>
+            ),
+          )}
         </div>
       </div>
-      {model.remainder > 0 && reveal > steps.length ? (
+      {model.remainder > 0 && finished ? (
         <p className={styles.remainderTag}>remainder {model.remainder}</p>
       ) : null}
     </div>
@@ -205,7 +218,9 @@ export function GridWatch({ model }: { model: GridModel | DivGridModel }) {
         <Grid model={model as GridModel} reveal={idx + 1} />
       )}
 
-      {isDiv && idx < last ? <Dmsb active={Math.min(idx % 4, 3)} /> : null}
+      {isDiv && idx < last ? (
+        <Dmsb active={(model as DivGridModel).dmsb[idx] ?? 0} />
+      ) : null}
 
       <div className={styles.narr}>
         <div className={styles.narrLabel}>{step.label}</div>

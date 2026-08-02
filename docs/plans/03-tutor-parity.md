@@ -105,6 +105,17 @@ have been compared side by side. We are not keeping both.
 
 ---
 
+## Structural parity, checked automatically
+
+`test/parity.test.ts` compares the port against the original *structurally*, not just
+numerically: same number of walk-through phases, same number of fill-in boxes, same step
+count, and a check that no topic lost its picture. It found nine real regressions the
+first time it ran — multiplication had collapsed 11 per-digit steps into 2, long division
+had collapsed 8 D-M-S-B phases into 3, and six topics had the wrong number of fill-ins.
+
+Run it with `npm test`. It is the thing that makes "did we port everything" answerable
+without clicking through 21 topics by hand.
+
 ## Improvements kept from the rebuild
 
 These are additions, not replacements — the original behaviour above is intact.

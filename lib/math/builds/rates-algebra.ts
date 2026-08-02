@@ -201,26 +201,28 @@ export function buildPercent(prob: PercentProblem): StepsModel {
       answerText: `${trimNum(pct)}%`,
       steps: [
         {
-          label: "Write it as a fraction, part over whole",
+          label: "Write it as a fraction, then divide",
           say: text(
-            `The part is ${trimNum(a)} and the whole is ${fmt(b)}, so the fraction is ${trimNum(a)}/${fmt(b)}.`,
+            `${trimNum(a)} out of ${fmt(b)} is the fraction ${trimNum(a)}/${fmt(b)}. Dividing turns it into a decimal: ${trimNum(dec)}.`,
           ),
-          show: [line({ t: "frac", num: a, den: b })],
-          ask: [{ label: "The whole", expect: String(b), w: 5 }],
+          show: [
+            line(
+              { t: "frac", num: a, den: b },
+              op("="),
+              t(`${trimNum(a)} ÷ ${fmt(b)}`),
+              op("="),
+              hi(trimNum(dec)),
+            ),
+          ],
+          ask: [{ label: "As a decimal", expect: trimNum(dec), w: 5, mode: "text" }],
         },
         {
-          label: "Divide to get a decimal",
-          say: text(`${trimNum(a)} ÷ ${fmt(b)} = ${trimNum(dec)}.`),
-          show: [line(t(`${trimNum(a)} ÷ ${fmt(b)} = `), hi(trimNum(dec)))],
-          ask: [{ label: "Decimal", expect: trimNum(dec), w: 6, mode: "text" }],
-        },
-        {
-          label: "Multiply by 100 to turn it into a percent",
+          label: "A decimal becomes a percent by multiplying by 100",
           say: text(
-            `${trimNum(dec)} × 100 = ${trimNum(pct)}%. Per cent literally means per hundred, so this step is just changing units.`,
+            `${trimNum(dec)} × 100 = ${trimNum(pct)}%. Multiplying by 100 slides the point two places right.`,
           ),
           show: [bigLine(grn(`${trimNum(pct)}%`))],
-          ask: [{ label: "Percent", expect: trimNum(pct), w: 5, mode: "text" }],
+          ask: [{ label: "Percent", expect: trimNum(pct), w: 4, mode: "text" }],
         },
       ],
       picture: {
@@ -258,7 +260,10 @@ export function buildPercent(prob: PercentProblem): StepsModel {
         label: "As a fraction: put it over 100, then simplify",
         say: text(`${P}/100 simplifies to ${sn}/${sd}.`),
         show: [bigLine({ t: "frac", num: P, den: 100 }, op("="), { t: "frac", num: sn, den: sd })],
-        ask: [{ label: "Simplest top", expect: String(sn), w: 4 }],
+        ask: [
+          { label: "Top", expect: String(sn), w: 4 },
+          { label: "Bottom", expect: String(sd), w: 4 },
+        ],
       },
     ],
     picture: {
@@ -529,11 +534,26 @@ export function buildEquations(prob: EquationProblem): StepsModel {
     });
     steps.push({
       label: `Now undo the × ${a}`,
-      say: text(`Divide both sides by ${a}: ${a * x} ÷ ${a} = ${x}.`),
+      say: text(`${a}x means ${a} times x, so divide both sides by ${a}: ${a * x} ÷ ${a} = ${x}.`),
       show: [bigLine(t("x = "), grn(String(x)))],
-      ask: [{ label: "x", expect: String(x), w: 4 }],
+      ask: [{ label: "x =", expect: String(x), w: 4 }],
+    });
+    steps.push({
+      label: "Check it",
+      say: text(
+        `Put ${x} back in: ${a} × ${x} + ${b} = ${a * x} + ${b} = ${rhs}. ✓ Matches the original.`,
+      ),
+      show: [line(mut(`${a}(${x}) + ${b} = ${rhs} ✓`))],
     });
   } else {
+    const lhsText =
+      kind === "add"
+        ? `x + ${a}`
+        : kind === "sub"
+          ? `x − ${a}`
+          : kind === "mul"
+            ? `${a}x`
+            : `x ÷ ${a}`;
     const undo =
       kind === "add"
         ? `Subtract ${a} from both sides`
@@ -557,15 +577,19 @@ export function buildEquations(prob: EquationProblem): StepsModel {
         `x has ${kind === "add" ? `${a} added` : kind === "sub" ? `${a} subtracted` : kind === "mul" ? `been multiplied by ${a}` : `been divided by ${a}`}. To get x on its own, do the opposite.`,
       ),
       show: [line(t(eq))],
-      ask: [{ label: "Undo with", expect: String(a), w: 3 }],
     });
     steps.push({
-      label: undo,
+      label: "Undo it on both sides",
       say: text(
         `${why}. Whatever you do to one side you must do to the other, or the scales stop balancing.`,
       ),
       show: [bigLine(t("x = "), grn(String(x)))],
-      ask: [{ label: "x", expect: String(x), w: 4 }],
+      ask: [{ label: "x =", expect: String(x), w: 4 }],
+    });
+    steps.push({
+      label: "Check it",
+      say: text(`Substitute ${x} back into the original: it comes out at ${rhs}. ✓`),
+      show: [line(mut(`${lhsText.replace("x", `(${x})`)} = ${rhs} ✓`))],
     });
   }
 
@@ -627,95 +651,145 @@ export function buildGeometry(prob: GeometryProblem): StepsModel {
 
   const sq = prob.kind === "vol" ? `${u}³` : `${u}²`;
 
-  if (prob.kind === "perim") {
-    return {
-      kind: "steps",
-      title: "Perimeter of a rectangle",
-      lead: shapeNode,
-      answerText: `${ans} ${u}`,
-      steps: [
+  /** Each shape walks a different number of moves, exactly as the original did. */
+  let steps: StepsModel["steps"];
+
+  switch (prob.kind) {
+    case "perim": {
+      steps = [
         {
-          label: "Perimeter is the distance all the way round",
+          label: "Perimeter = the whole way around",
           say: text(
-            `Walk the edge: ${prob.w} + ${prob.h} + ${prob.w} + ${prob.h}. Opposite sides of a rectangle match, so there are two of each.`,
+            `Walk the edge: ${prob.w} along, ${prob.h} up, ${prob.w} back, ${prob.h} down.`,
           ),
-          show: [line(t(`${prob.w} + ${prob.h} + ${prob.w} + ${prob.h}`))],
-          ask: [{ label: "Total", expect: String(ans), w: 4 }],
+          show: [line(t(`P = ${prob.w} + ${prob.h} + ${prob.w} + ${prob.h}`))],
         },
         {
-          label: "The shortcut: 2 × (length + width)",
+          label: "Add one long side and one short side",
+          say: text(`${prob.w} + ${prob.h} = ${prob.w + prob.h} — that is half the way round.`),
+          show: [line(t(`${prob.w} + ${prob.h} = `), hi(String(prob.w + prob.h)))],
+          ask: [{ label: "Half the perimeter", expect: String(prob.w + prob.h), w: 4 }],
+        },
+        {
+          label: "Double it",
           say: text(
-            `${prob.w} + ${prob.h} = ${prob.w + prob.h}, and doubling gives ${ans} ${u}.`,
+            `2 × ${prob.w + prob.h} = ${ans} ${u}. Perimeter is a plain length, so no squaring.`,
           ),
-          show: [bigLine(t(`2 × ${prob.w + prob.h} = `), grn(`${ans} ${u}`))],
+          show: [bigLine(grn(`${ans} ${u}`))],
           ask: [{ label: `Perimeter (${u})`, expect: String(ans), w: 4 }],
         },
-      ],
-      picture: {
-        title: "Perimeter is a length, not an area",
-        sub: text(
-          "It is the fence around the field, not the grass inside it — which is why it is measured in plain units, never squared ones.",
-        ),
-        body: [
-          shapeNode,
-          {
-            t: "note",
-            body: parseRich(
-              "<b>The commonest mix-up:</b> using the area formula when the question asks for perimeter. Ask yourself whether you are buying fencing or turf.",
-            ),
-          },
-        ],
-      },
-    };
+      ];
+      break;
+    }
+    case "tri": {
+      const prod = prob.w * prob.h;
+      steps = [
+        {
+          label: "Area of a triangle = base × height ÷ 2",
+          say: text(
+            "A triangle is exactly half of a rectangle with the same base and height. Draw the rectangle around it and you can see the two halves.",
+          ),
+          show: [line(t(`A = ${prob.w} × ${prob.h} ÷ 2`))],
+        },
+        {
+          label: "Base × height first",
+          say: text(`${prob.w} × ${prob.h} = ${fmt(prod)} — that is the whole rectangle.`),
+          show: [line(t(`${prob.w} × ${prob.h} = `), hi(fmt(prod)))],
+          ask: [{ label: "base × height", expect: String(prod), w: 5 }],
+        },
+        {
+          label: "Halve it",
+          say: text(`${fmt(prod)} ÷ 2 = ${trimNum(ans)} square ${u}.`),
+          show: [bigLine(grn(`${trimNum(ans)} ${sq}`))],
+          ask: [{ label: `Area (${sq})`, expect: trimNum(ans), w: 5, mode: "text" }],
+        },
+      ];
+      break;
+    }
+    case "vol": {
+      const base = prob.w * prob.h;
+      steps = [
+        {
+          label: "Volume = length × width × height",
+          say: text("Work out one layer first, then count the layers."),
+          show: [line(t(`V = ${prob.w} × ${prob.h} × ${prob.d}`))],
+        },
+        {
+          label: "Area of one layer",
+          say: text(`${prob.w} × ${prob.h} = ${fmt(base)} cubes in the bottom layer.`),
+          show: [line(t(`${prob.w} × ${prob.h} = `), hi(fmt(base)))],
+          ask: [{ label: "One layer", expect: String(base), w: 5 }],
+        },
+        {
+          label: `Stack ${prob.d} layers`,
+          say: text(`${fmt(base)} × ${prob.d} = ${fmt(ans)} cubic ${u}.`),
+          show: [bigLine(grn(`${fmt(ans)} ${sq}`))],
+          ask: [{ label: `Volume (${sq})`, expect: String(ans), w: 6 }],
+        },
+      ];
+      break;
+    }
+    case "ell": {
+      const A1 = prob.w1 * prob.h1;
+      const A2 = prob.w2 * prob.h2;
+      steps = [
+        {
+          label: "Pretend the notch is not there",
+          say: text(`The full rectangle would be ${prob.w1} by ${prob.h1}.`),
+          show: [line(t(`${prob.w1} × ${prob.h1} = `), hi(fmt(A1)))],
+          ask: [{ label: "Whole rectangle", expect: String(A1), w: 5 }],
+        },
+        {
+          label: "Work out the bite that was taken out",
+          say: text(`The missing corner is ${prob.w2} by ${prob.h2}.`),
+          show: [line(t(`${prob.w2} × ${prob.h2} = `), hi(fmt(A2)))],
+          ask: [{ label: "Missing corner", expect: String(A2), w: 5 }],
+        },
+        {
+          label: "Subtract",
+          say: text(`${fmt(A1)} − ${fmt(A2)} = ${fmt(ans)} square ${u}.`),
+          show: [bigLine(grn(`${fmt(ans)} ${sq}`))],
+          ask: [{ label: `Area (${sq})`, expect: String(ans), w: 5 }],
+        },
+      ];
+      break;
+    }
+    default: {
+      // area and para: state the formula, then multiply.
+      const w = "w" in prob ? prob.w : 0;
+      const h = "h" in prob ? prob.h : 0;
+      steps = [
+        {
+          label:
+            prob.kind === "para"
+              ? "Area of a parallelogram = base × height"
+              : "Area of a rectangle = length × width",
+          say: text(
+            prob.kind === "para"
+              ? "Slice the slanted end off and slide it round to the other side and you have a rectangle. Same area, easier shape."
+              : `Area counts the squares that fit inside. ${h} rows of ${w} squares each.`,
+          ),
+          show: [line(t(`A = ${w} × ${h}`))],
+        },
+        {
+          label: "Multiply",
+          say: text(`${w} × ${h} = ${fmt(ans)} square ${u}.`),
+          sub: parseRich(
+            "Area is always in <b>square</b> units, because you are counting squares.",
+          ),
+          show: [bigLine(grn(`${fmt(ans)} ${sq}`))],
+          ask: [{ label: `Area (${sq})`, expect: String(ans), w: 5 }],
+        },
+      ];
+    }
   }
-
-  // A switch rather than a ternary chain: TypeScript narrows the discriminated union
-  // reliably here, and `ell` carries different field names from every other shape.
-  let formula: string;
-  switch (prob.kind) {
-    case "tri":
-      formula = `${prob.w} × ${prob.h} ÷ 2`;
-      break;
-    case "vol":
-      formula = `${prob.w} × ${prob.h} × ${prob.d}`;
-      break;
-    case "ell":
-      formula = `${prob.w1} × ${prob.h1} − ${prob.w2} × ${prob.h2}`;
-      break;
-    default:
-      formula = `${prob.w} × ${prob.h}`;
-  }
-
-  const why =
-    prob.kind === "area"
-      ? "Area is how many unit squares fit inside. A rectangle holds exactly length × width of them."
-      : prob.kind === "tri"
-        ? "A triangle is exactly half of the rectangle that boxes it in — so work out that rectangle, then halve it."
-        : prob.kind === "para"
-          ? "Slide the slanted end across and a parallelogram becomes a rectangle of the same area. That is why you use the straight height, never the slanted side."
-          : prob.kind === "vol"
-            ? "Volume is how many unit cubes fit inside: a layer of length × width, stacked depth times."
-            : "Cut the L into the big rectangle it would be, then take away the missing notch.";
 
   return {
     kind: "steps",
     title: geometryTitleFor(prob.kind),
     lead: shapeNode,
-    answerText: `${ans} ${sq}`,
-    steps: [
-      {
-        label: "Which formula does this shape need?",
-        say: text(why),
-        show: [line(t(formula))],
-        ask: [{ label: "Product", expect: String(rawProduct(prob)), w: 6 }],
-      },
-      {
-        label: "Work it out",
-        say: text(`${formula} = ${ans} ${sq}.`),
-        show: [bigLine(grn(`${ans} ${sq}`))],
-        ask: [{ label: `Answer (${sq})`, expect: String(ans), w: 6 }],
-      },
-    ],
+    answerText: `${trimNum(ans)} ${sq}`,
+    steps,
     picture: {
       title: "Every formula is really just counting squares",
       sub: text(

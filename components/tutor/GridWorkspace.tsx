@@ -5,6 +5,7 @@ import { systemRng } from "@/lib/math/rng";
 import type { TopicRuntime } from "@/lib/math/registry";
 import { GridTry, GridWatch } from "./GridModes";
 import { AreaModel, SharePicture } from "./GridPictures";
+import { PictureIt as StepsPicture } from "./StepsModes";
 import styles from "./StepsWorkspace.module.css";
 
 /** Holds one column-arithmetic problem across Watch it and You try. */
@@ -64,6 +65,8 @@ export function GridWorkspace({
             a={(problem as { a: number }).a}
             b={(problem as { b: number }).b}
           />
+        ) : runtime.id === "dec-addsub" && runtime.build ? (
+          <StepsPicture model={runtime.build(problem)} />
         ) : model.kind === "div" ? (
           <SharePicture
             key={nonce}

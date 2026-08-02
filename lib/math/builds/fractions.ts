@@ -235,19 +235,15 @@ export function buildFracAddSub(prob: AddSubFracProblem): StepsModel {
         `Whole × bottom, then add the top. ${mixText(w1, n1, d1)} becomes ${N1}/${d1}, and ${mixText(w2, n2, d2)} becomes ${N2}/${d2}. Improper fractions are easier to combine.`,
       ),
       show: [line(frac(N1, d1), op(opStr), frac(N2, d2))],
-      ask: [{ label: "First top", expect: String(N1), w: 3 }],
+      // One box per mixed number actually present, as the original did.
+      ask: [
+        ...(w1 > 0 ? [{ label: "First top", expect: String(N1), w: 3 }] : []),
+        ...(w2 > 0 ? [{ label: "Second top", expect: String(N2), w: 3 }] : []),
+      ],
     });
   }
 
-  if (d1 === d2) {
-    steps.push({
-      label: "The bottoms already match",
-      say: text(
-        `Both are ${d1}ths, so the pieces are the same size — you can combine the tops straight away.`,
-      ),
-      show: [line(frac(N1, d1), op(opStr), frac(N2, d2))],
-    });
-  } else {
+  if (d1 !== d2) {
     steps.push({
       label: `Find a bottom they both fit into`,
       say: text(
@@ -285,7 +281,28 @@ export function buildFracAddSub(prob: AddSubFracProblem): StepsModel {
         `${raw} and ${L} share a factor of ${gcd(raw, L)}, so divide both by it.`,
       ),
       show: [bigLine(frac(raw, L), op("="), frac(sn, sd))],
-      ask: [{ label: "Simplest form top", expect: String(sn), w: 4 }],
+      ask: [
+        { label: "Top", expect: String(sn), w: 3 },
+        { label: "Bottom", expect: String(sd), w: 3 },
+      ],
+    });
+  }
+
+  // A top-heavy answer gets written as a mixed number, as the original did.
+  if (sn > sd && sd > 1) {
+    const W = Math.floor(sn / sd);
+    const Rr = sn - W * sd;
+    steps.push({
+      label: "It is top-heavy — write it as a mixed number",
+      say: text(`${sn} ÷ ${sd} = ${W} remainder ${Rr}.`),
+      show: [bigLine(frac(Rr, sd, W || undefined))],
+      ask:
+        Rr === 0
+          ? [{ label: "Whole", expect: String(W), w: 3 }]
+          : [
+              { label: "Whole", expect: String(W), w: 3 },
+              { label: "Top", expect: String(Rr), w: 3 },
+            ],
     });
   }
 
@@ -344,18 +361,25 @@ export function buildFracMulDiv(prob: MulDivFracProblem): StepsModel {
         `You cannot multiply mixed numbers piece by piece. ${mixText(w1, n1, d1)} is ${N1}/${d1} and ${mixText(w2, n2, d2)} is ${N2}/${d2}.`,
       ),
       show: [line(frac(N1, d1), op(opStr), frac(N2, d2))],
-      ask: [{ label: "First top", expect: String(N1), w: 3 }],
+      // One box per mixed number actually present, as the original did.
+      ask: [
+        ...(w1 > 0 ? [{ label: "First top", expect: String(N1), w: 3 }] : []),
+        ...(w2 > 0 ? [{ label: "Second top", expect: String(N2), w: 3 }] : []),
+      ],
     });
   }
 
   if (kind === "div") {
     steps.push({
-      label: "Flip the second fraction and multiply",
+      label: "Flip the second fraction and switch ÷ to ×",
       say: text(
         `Dividing by ${N2}/${d2} is the same as multiplying by ${d2}/${N2}. Turn it upside down and the problem becomes a multiplication.`,
       ),
       show: [line(frac(N1, d1), op("×"), frac(d2, N2))],
-      ask: [{ label: "Flipped top", expect: String(d2), w: 3 }],
+      ask: [
+        { label: "Flipped top", expect: String(d2), w: 3 },
+        { label: "Flipped bottom", expect: String(N2), w: 3 },
+      ],
     });
   }
 
@@ -380,7 +404,27 @@ export function buildFracMulDiv(prob: MulDivFracProblem): StepsModel {
       label: "Simplify",
       say: text(`Divide top and bottom by ${gcd(topRaw, botRaw)}.`),
       show: [bigLine(frac(topRaw, botRaw), op("="), frac(sn, sd))],
-      ask: [{ label: "Simplest top", expect: String(sn), w: 4 }],
+      ask: [
+        { label: "Top", expect: String(sn), w: 4 },
+        { label: "Bottom", expect: String(sd), w: 4 },
+      ],
+    });
+  }
+
+  if (sn > sd && sd > 1) {
+    const W = Math.floor(sn / sd);
+    const Rr = sn - W * sd;
+    steps.push({
+      label: "Write the top-heavy answer as a mixed number",
+      say: text(`${sn} ÷ ${sd} = ${W} remainder ${Rr}.`),
+      show: [bigLine(frac(Rr, sd, W || undefined))],
+      ask:
+        Rr === 0
+          ? [{ label: "Whole", expect: String(W), w: 3 }]
+          : [
+              { label: "Whole", expect: String(W), w: 3 },
+              { label: "Top", expect: String(Rr), w: 3 },
+            ],
     });
   }
 
