@@ -1,0 +1,127 @@
+.wrap {
+  padding: 6px 0 2px;
+}
+
+.learnHead {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.counter {
+  font-size: 0.78rem;
+  color: var(--ink3);
+}
+
+.card {
+  background: var(--paper2);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 26px 24px;
+  text-align: center;
+}
+
+.q {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(1.8rem, 6vw, 2.6rem);
+  margin: 0 0 16px;
+}
+
+.a {
+  font-family: var(--mono);
+  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  color: var(--sage-d);
+  margin: 0 0 10px;
+  font-weight: 600;
+}
+
+.hook {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  color: var(--ink2);
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.answer {
+  font: inherit;
+  font-family: var(--mono);
+  font-size: 1.5rem;
+  width: 6rem;
+  text-align: center;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--line2);
+  border-radius: 12px;
+  background: var(--paper);
+  margin-right: 10px;
+}
+
+.answer:focus {
+  outline: 2px solid var(--clay-s);
+  border-color: var(--clay);
+}
+
+.answer.ok {
+  border-color: var(--sage);
+  background: var(--sage-s);
+  color: var(--sage-d);
+}
+
+.answer.bad {
+  border-color: var(--berry);
+  background: var(--berry-s);
+}
+
+.progress {
+  height: 5px;
+  background: var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.progress i {
+  display: block;
+  height: 100%;
+  background: var(--sage);
+  transition: width 0.25s;
+}
+
+.summaryTitle {
+  font-size: 1.15rem;
+  margin-bottom: 12px;
+}
+
+.missList {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.missList li {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.missQ {
+  display: block;
+  font-family: var(--mono);
+  font-size: 1.15rem;
+  color: var(--ink);
+}
+
+.missHook {
+  display: block;
+  font-size: 0.86rem;
+  color: var(--ink2);
+  margin-top: 3px;
+}
