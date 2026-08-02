@@ -91,16 +91,19 @@ export function createLaneScene(P: typeof Phaser, config: ThreadingConfig) {
         g.lineBetween(0, y + TILE_H / 2 + 14, W, y + TILE_H / 2 + 14);
       }
 
-      this.dotGroup = this.add.container(W / 2, 96);
+      // Array and numeral sit side by side rather than stacked. Stacking collided at
+      // 12x12 (the tallest array), and side-by-side reads as "this array *is* this
+      // number", which is the whole point of showing it.
+      this.dotGroup = this.add.container(W / 2 - 120, 84);
       this.targetText = this.add
-        .text(W / 2, 64, "", {
+        .text(W / 2 + 60, 84, "", {
           fontFamily: "Georgia, serif",
-          fontSize: "54px",
+          fontSize: "50px",
           color: "#3D352C",
         })
         .setOrigin(0.5);
       this.targetSub = this.add
-        .text(W / 2, 132, "", {
+        .text(W / 2, 148, "", {
           fontFamily: "ui-sans-serif, system-ui, sans-serif",
           fontSize: "17px",
           color: "#9A8B7C",
@@ -123,8 +126,9 @@ export function createLaneScene(P: typeof Phaser, config: ThreadingConfig) {
       this.tiles = [];
       this.solved = 0;
       this.newTarget();
-      // Seed the board so she is not staring at an empty screen.
-      for (let i = 0; i < 5; i++) this.spawnTile(W * 0.35 + i * 150);
+      // Seed the board so she is not staring at an empty screen. Spacing exceeds the
+      // lane-gap check, so every one of these actually lands.
+      for (let i = 0; i < 6; i++) this.spawnTile(W * 0.3 + i * (TILE_W + 60));
     }
 
     private newTarget() {
@@ -163,23 +167,38 @@ export function createLaneScene(P: typeof Phaser, config: ThreadingConfig) {
     }
 
     private drawDots(rows: number, cols: number, alpha = 1) {
-      const r = 4;
-      const gap = 12;
+      // Cap the footprint so a 12x12 array is no taller than a 3x4 one is wide.
+      const gap = Math.min(11, 88 / Math.max(1, Math.max(rows, cols) - 1));
+      const r = Math.max(2, gap * 0.32);
       const w = (cols - 1) * gap;
       const h = (rows - 1) * gap;
       const dots = this.add.graphics();
       dots.fillStyle(CLAY, alpha * 0.85);
       for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
-          dots.fillCircle(x * gap - w / 2, y * gap - h / 2 + 26, r);
+          dots.fillCircle(x * gap - w / 2, y * gap - h / 2, r);
         }
       }
       this.dotGroup.add(dots);
     }
 
+    /** Lanes with enough clear space at the right edge to drop a tile into. */
+    private freeLanes(atX: number): number[] {
+      const gap = TILE_W + 42;
+      return LANES.map((_, i) => i).filter((lane) =>
+        this.tiles.every(
+          (t) => t.dead || t.lane !== lane || Math.abs(t.container.x - atX) > gap,
+        ),
+      );
+    }
+
     private spawnTile(atX = W + TILE_W) {
       const pool = fams(this.level);
-      const lane = Math.floor(Math.random() * LANES.length);
+      // Overlapping tiles read as one multi-digit number — "10 8" looks like 108. Only
+      // spawn into a lane with room, and skip the beat entirely if none has any.
+      const free = this.freeLanes(atX);
+      if (free.length === 0) return;
+      const lane = free[Math.floor(Math.random() * free.length)];
 
       // Bias toward numbers that can actually complete the current target, so the board
       // is solvable without being obvious.

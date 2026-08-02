@@ -366,11 +366,13 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
     private addRoamer() {
       const obj = this.add.container(0, 0);
       const g = this.add.graphics();
-      g.fillStyle(BERRY, 0.85);
-      g.fillCircle(0, 0, 17);
+      // Small and tucked into the cell's corner. A roamer centred on the cell covered the
+      // number, so she could not read what she was about to eat.
+      g.fillStyle(BERRY, 0.9);
+      g.fillCircle(0, 0, 12);
       g.fillStyle(0xfffcf7, 1);
-      g.fillCircle(-6, -4, 3.5);
-      g.fillCircle(6, -4, 3.5);
+      g.fillCircle(-4, -3, 2.6);
+      g.fillCircle(4, -3, 2.6);
       obj.add(g);
       const r: Roamer = { col: this.rnd(0, COLS - 1), row: 0, obj };
       this.roamers.push(r);
@@ -379,8 +381,8 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
 
     private placeRoamer(r: Roamer) {
       r.obj.setPosition(
-        GRID_X + r.col * CELL_W + CELL_W / 2,
-        GRID_Y + r.row * CELL_H + CELL_H / 2,
+        GRID_X + r.col * CELL_W + CELL_W - 26,
+        GRID_Y + r.row * CELL_H + CELL_H - 22,
       );
     }
 
