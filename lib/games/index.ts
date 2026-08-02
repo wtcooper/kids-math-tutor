@@ -18,7 +18,8 @@ export type GameImpl =
   | "enclosure"
   | "tiles"
   | "cut"
-  | "beam";
+  | "beam"
+  | "balance";
 
 export interface GameMeta {
   /** Route: /play/<slug>. Stable — it is what her bookmarks point at. */
@@ -134,6 +135,16 @@ export const GAMES: readonly GameMeta[] = [
       "One beam, several machines. Only one splitter setting can pay them all in whole strands.",
     focus: "understanding",
     levelNames: ["Two machines", "Trickier pairs", "Awkward pairs", "Three machines"],
+  },
+  {
+    slug: "balance",
+    impl: "balance",
+    name: "Balance",
+    topicId: "equations",
+    blurb:
+      "Take the same thing off both pans until one bag stands alone. Whatever balances it is x.",
+    focus: "understanding",
+    levelNames: ["x + a = b", "n bags", "n bags and stones", "Bags on both sides"],
   },
 ];
 

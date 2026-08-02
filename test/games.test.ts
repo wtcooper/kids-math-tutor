@@ -46,6 +46,16 @@ import {
   strandsFor,
   totalDemand,
 } from "../app/(app)/play/[slug]/_games/beam/beam-model";
+import {
+  apply,
+  canApply,
+  equationText,
+  genBalance,
+  isBalanced,
+  isSolved,
+  type Move,
+  solvedValue,
+} from "../app/(app)/play/[slug]/_games/balance/balance-model";
 
 const LEVELS = [1, 2, 3, 4];
 const SEEDS = 300;
@@ -364,5 +374,83 @@ describe("Split the Beam", () => {
         expect(wrong.length, `${p.demands.map((d) => `${d.n}/${d.d}`).join("+")} has no near miss`).toBeGreaterThan(0);
       }
     }
+  });
+});
+
+describe("Balance", () => {
+  it("every scale starts balanced and stays balanced through any legal move", () => {
+    for (let level = 1; level <= 4; level++) {
+      for (let s = 0; s < 200; s++) {
+        const rand = mulberry32(16000 + s);
+        const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+        const p = genBalance(level, rnd);
+        expect(isBalanced(p.start, p.x), `L${level}: ${equationText(p.start)} is not level`).toBe(true);
+
+        const moves: Move[] = [
+          { kind: "removeStones", count: 1 },
+          { kind: "removeBag", count: 1 },
+          { kind: "divide", by: 2 },
+          { kind: "divide", by: 3 },
+          { kind: "addStones", count: 4 },
+        ];
+        for (const m of moves) {
+          if (!canApply(p.start, m)) continue;
+          const after = apply(p.start, m);
+          expect(
+            isBalanced(after, p.x),
+            `L${level}: ${equationText(p.start)} then ${m.kind} broke the balance`,
+          ).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("is always solvable, and the answer is the x it was built with", () => {
+    for (let level = 1; level <= 4; level++) {
+      for (let s = 0; s < 200; s++) {
+        const rand = mulberry32(17000 + s);
+        const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+        const p = genBalance(level, rnd);
+
+        // Play it the way the game allows: cancel bags, cancel stones, then share out.
+        let sc = p.start;
+        let guard = 0;
+        while (!isSolved(sc) && guard++ < 40) {
+          const bags = Math.min(sc.left.bags, sc.right.bags);
+          const stones = Math.min(sc.left.stones, sc.right.stones);
+          if (bags > 0) sc = apply(sc, { kind: "removeBag", count: bags });
+          else if (stones > 0) sc = apply(sc, { kind: "removeStones", count: stones });
+          else {
+            const by = [2, 3, 4, 5].find((n) => canApply(sc, { kind: "divide", by: n }));
+            if (!by) break;
+            sc = apply(sc, { kind: "divide", by });
+          }
+        }
+        expect(isSolved(sc), `L${level}: ${equationText(p.start)} could not be solved`).toBe(true);
+        expect(solvedValue(sc), `L${level}: ${equationText(p.start)}`).toBe(p.x);
+      }
+    }
+  });
+
+  it("writes the equation the way the tutor does", () => {
+    expect(equationText({ left: { bags: 1, stones: 3 }, right: { bags: 0, stones: 8 } })).toBe(
+      "x + 3 = 8",
+    );
+    expect(equationText({ left: { bags: 3, stones: 0 }, right: { bags: 0, stones: 12 } })).toBe(
+      "3x = 12",
+    );
+    expect(equationText({ left: { bags: 4, stones: 2 }, right: { bags: 1, stones: 11 } })).toBe(
+      "4x + 2 = x + 11",
+    );
+    expect(equationText({ left: { bags: 1, stones: 0 }, right: { bags: 0, stones: 5 } })).toBe(
+      "x = 5",
+    );
+  });
+
+  it("refuses a move a pan cannot afford", () => {
+    const sc = { left: { bags: 2, stones: 1 }, right: { bags: 0, stones: 9 } };
+    expect(canApply(sc, { kind: "removeStones", count: 2 })).toBe(false);
+    expect(canApply(sc, { kind: "removeBag", count: 1 })).toBe(false);
+    expect(canApply(sc, { kind: "divide", by: 2 })).toBe(false);
   });
 });

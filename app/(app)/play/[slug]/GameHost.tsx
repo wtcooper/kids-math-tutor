@@ -36,6 +36,10 @@ const LOADERS = {
   tiles: dynamic(() => import("./_games/tiles/Tiles"), { ssr: false, loading: Loading }),
   cut: dynamic(() => import("./_games/cut/Cut"), { ssr: false, loading: Loading }),
   beam: dynamic(() => import("./_games/beam/Beam"), { ssr: false, loading: Loading }),
+  balance: dynamic(() => import("./_games/balance/Balance"), {
+    ssr: false,
+    loading: Loading,
+  }),
 } satisfies Record<GameImpl, unknown>;
 
 /** Every game component takes exactly this. */
