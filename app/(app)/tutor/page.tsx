@@ -28,6 +28,11 @@ export default async function TutorPage({ searchParams }: Props) {
       initialTopicId={topic}
       initialLevel={Number(level) || undefined}
       initialMode={mode}
+      // The first problem is seeded from here so the server render and the client
+      // hydration produce the same one. Generating it independently on both sides is a
+      // hydration mismatch — React throws away the server HTML and the problem visibly
+      // changes under her.
+      seed={Math.floor(Math.random() * 2 ** 31)}
     />
   );
 }

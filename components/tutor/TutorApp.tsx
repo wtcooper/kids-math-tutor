@@ -33,10 +33,13 @@ export function TutorApp({
   initialTopicId,
   initialLevel,
   initialMode,
+  seed,
 }: {
   initialTopicId?: string;
   initialLevel?: number;
   initialMode?: string;
+  /** Server-supplied, so the first problem is identical on both sides of hydration. */
+  seed: number;
 }) {
   const [topicId, setTopicId] = useState(
     initialTopicId && BY_ID[initialTopicId] ? initialTopicId : DEFAULT_TOPIC,
@@ -130,7 +133,13 @@ export function TutorApp({
   }, [topicId, level]);
 
   const game = GAMES[topicId];
-  const workspaceKey = `${topicId}-${level}-${activeMode}-${nonce}-${forced ? "forced" : "gen"}`;
+  // Deliberately not keyed on the mode: switching tabs keeps the current problem, the way
+  // the original did (math-table.html:3626 sets S.mode and re-renders, it never calls
+  // newProblem). Watching a problem worked and then trying that same one is the point.
+  const workspaceKey = `${topicId}-${level}-${nonce}-${forced ? "forced" : "gen"}`;
+  // Each remount needs a different first problem, or "New problem" would hand back the
+  // same one. 7919 is just a prime stride so consecutive nonces don't correlate.
+  const workspaceSeed = seed + nonce * 7919;
 
   return (
     <main className="wrap">
@@ -221,7 +230,12 @@ export function TutorApp({
       <section className="card">
         {isFacts ? (
           activeMode === "drill" ? (
-            <DrillMode key={`${kind}-${level}-${nonce}`} kind={kind} level={level} />
+            <DrillMode
+              key={`${kind}-${level}-${nonce}`}
+              kind={kind}
+              level={level}
+              seed={workspaceSeed}
+            />
           ) : (
             <LearnMode key={`${kind}-${level}`} kind={kind} level={level} />
           )
@@ -233,6 +247,7 @@ export function TutorApp({
             mode={activeMode as "picture" | "watch" | "try"}
             forcedProblem={forced}
             onNewProblem={newProblem}
+            seed={workspaceSeed}
           />
         ) : runtime?.build && activeMode !== "practice" ? (
           <StepsWorkspace
@@ -242,12 +257,14 @@ export function TutorApp({
             mode={activeMode as "picture" | "watch" | "try"}
             forcedProblem={forced}
             onNewProblem={newProblem}
+            seed={workspaceSeed}
           />
         ) : runtime ? (
           <PracticeMode
             key={`${topicId}-${level}-${nonce}`}
             runtime={runtime}
             level={level}
+            seed={workspaceSeed}
             onWalkThrough={runtime.build || runtime.gridBuild ? walkThrough : undefined}
           />
         ) : null}

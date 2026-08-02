@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { systemRng } from "@/lib/math/rng";
+import { makeRng, mulberry32, systemRng } from "@/lib/math/rng";
 import type { TopicRuntime } from "@/lib/math/registry";
 import styles from "./PracticeMode.module.css";
 
@@ -28,13 +28,16 @@ export function PracticeMode({
   runtime,
   level,
   onWalkThrough,
+  seed,
 }: {
   runtime: TopicRuntime;
   level: number;
   /** Hands this exact problem to Watch it. */
   onWalkThrough?: (problem: unknown) => void;
+  /** Seeds the first problem so server and client agree — see TutorApp. */
+  seed: number;
 }) {
-  const [problem, setProblem] = useState(() => runtime.gen(level, systemRng));
+  const [problem, setProblem] = useState(() => runtime.gen(level, makeRng(mulberry32(seed))));
   const [values, setValues] = useState<Record<string, string>>({});
   const [state, setState] = useState<"asking" | "right" | "wrong">("asking");
   const [answered, setAnswered] = useState(false);

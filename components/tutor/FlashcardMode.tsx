@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { card, fams, type FactCard, type FactKind } from "@/lib/math/facts";
-import { systemRng } from "@/lib/math/rng";
+import { makeRng, mulberry32, systemRng, type Rng } from "@/lib/math/rng";
 import { RichText } from "./RichText";
 import styles from "./FlashcardMode.module.css";
 
@@ -157,23 +157,34 @@ export function LearnMode({ kind, level }: { kind: FactKind; level: number }) {
 
 type Result = "ok" | "miss" | null;
 
-function shuffle(cards: FactCard[]): FactCard[] {
+function shuffle(cards: FactCard[], rng: Rng = systemRng): FactCard[] {
   const out = cards.slice();
   for (let i = out.length - 1; i > 0; i--) {
-    const j = systemRng.int(0, i);
+    const j = rng.int(0, i);
     [out[i], out[j]] = [out[j], out[i]];
   }
   return out;
 }
 
-function fullDeck(kind: FactKind, level: number): FactCard[] {
+function fullDeck(kind: FactKind, level: number, rng?: Rng): FactCard[] {
   const cards: FactCard[] = [];
   for (const f of fams(level)) for (let i = 2; i <= 12; i++) cards.push(card(kind, f, i));
-  return shuffle(cards);
+  return shuffle(cards, rng);
 }
 
-export function DrillMode({ kind, level }: { kind: FactKind; level: number }) {
-  const [deck, setDeck] = useState<FactCard[]>(() => fullDeck(kind, level));
+export function DrillMode({
+  kind,
+  level,
+  seed,
+}: {
+  kind: FactKind;
+  level: number;
+  /** Seeds the opening shuffle so server and client agree — see TutorApp. */
+  seed: number;
+}) {
+  const [deck, setDeck] = useState<FactCard[]>(() =>
+    fullDeck(kind, level, makeRng(mulberry32(seed))),
+  );
   const [results, setResults] = useState<Result[]>(() => deck.map(() => null));
   const [pos, setPos] = useState(0);
   const [val, setVal] = useState("");

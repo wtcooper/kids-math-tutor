@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { systemRng } from "@/lib/math/rng";
+import { makeRng, mulberry32, systemRng } from "@/lib/math/rng";
 import type { TopicRuntime } from "@/lib/math/registry";
 import { GridTry, GridWatch } from "./GridModes";
 import { AreaModel, SharePicture } from "./GridPictures";
@@ -15,6 +15,7 @@ export function GridWorkspace({
   mode,
   forcedProblem,
   onNewProblem,
+  seed,
 }: {
   runtime: TopicRuntime;
   level: number;
@@ -22,8 +23,12 @@ export function GridWorkspace({
   /** Set by "use your own numbers" or Practice's "walk me through it". */
   forcedProblem?: unknown;
   onNewProblem?: () => void;
+  /** Seeds the first problem so server and client agree — see TutorApp. */
+  seed: number;
 }) {
-  const [problem, setProblem] = useState(() => forcedProblem ?? runtime.gen(level, systemRng));
+  const [problem, setProblem] = useState(
+    () => forcedProblem ?? runtime.gen(level, makeRng(mulberry32(seed))),
+  );
   const [stats, setStats] = useState({ solved: 0, clean: 0 });
   const [nonce, setNonce] = useState(0);
 

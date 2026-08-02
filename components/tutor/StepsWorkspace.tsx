@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { systemRng } from "@/lib/math/rng";
+import { makeRng, mulberry32, systemRng } from "@/lib/math/rng";
 import type { TopicRuntime } from "@/lib/math/registry";
 import { PictureIt, WatchIt, YouTry } from "./StepsModes";
 import styles from "./StepsWorkspace.module.css";
@@ -19,6 +19,7 @@ export function StepsWorkspace({
   mode,
   forcedProblem,
   onNewProblem,
+  seed,
 }: {
   runtime: TopicRuntime;
   level: number;
@@ -26,8 +27,12 @@ export function StepsWorkspace({
   /** Set by "use your own numbers" or Practice's "walk me through it". */
   forcedProblem?: unknown;
   onNewProblem?: () => void;
+  /** Seeds the first problem so server and client agree — see TutorApp. */
+  seed: number;
 }) {
-  const [problem, setProblem] = useState(() => forcedProblem ?? runtime.gen(level, systemRng));
+  const [problem, setProblem] = useState(
+    () => forcedProblem ?? runtime.gen(level, makeRng(mulberry32(seed))),
+  );
   const [stats, setStats] = useState({ solved: 0, clean: 0 });
   const [nonce, setNonce] = useState(0);
 
