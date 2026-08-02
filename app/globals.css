@@ -1,3 +1,58 @@
+/*
+ * Tokens and primitives lifted verbatim from the original single-file tutor
+ * (docs/math-table.html lines 8-24, 27-34, 75-90) so the React pages and the tutor read
+ * as one document rather than two apps.
+ *
+ * Deliberately NOT ported: .rectshape, .dimlbl, .tri, .prism (original lines 305-312) —
+ * dead rules from a DOM shape renderer that svgShape replaced.
+ */
+
+:root {
+  --cream: #faf6ef;
+  --paper: #fffcf7;
+  --paper2: #fdf8f1;
+  --ink: #3d352c;
+  --ink2: #6e6053;
+  --ink3: #9a8b7c;
+  --line: #eadfce;
+  --line2: #dccfba;
+  --clay: #be6e4e;
+  --clay-d: #a55c3f;
+  --clay-s: #f6e4d9;
+  --sage: #6d8e68;
+  --sage-d: #4e6e4a;
+  --sage-s: #e6efe3;
+  --gold: #ce9430;
+  --gold-d: #a2711d;
+  --gold-s: #fbefd6;
+  --berry: #af5c63;
+  --berry-s: #f8e4e5;
+  --blue: #5b7c99;
+  --blue-s: #e2ebf1;
+  --mono: "SFMono-Regular", ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
+  --serif: Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif;
+  --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  /* column-grid metrics: cell width / row height / font size */
+  --cw: 2.7rem;
+  --rh: 2.9rem;
+  --fs: 1.65rem;
+  --sh: 0 1px 2px rgba(61, 53, 44, 0.05), 0 10px 26px -16px rgba(61, 53, 44, 0.35);
+  --sh2: 0 1px 2px rgba(61, 53, 44, 0.05), 0 18px 40px -22px rgba(61, 53, 44, 0.45);
+}
+
+@media (max-width: 560px) {
+  :root {
+    --cw: 2.05rem;
+    --rh: 2.35rem;
+    --fs: 1.25rem;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
 html,
 body {
   margin: 0;
@@ -5,12 +60,118 @@ body {
 }
 
 body {
+  background: var(--cream);
+  background-image: radial-gradient(
+      1100px 600px at 12% -8%,
+      #fff9ee 0%,
+      rgba(255, 249, 238, 0) 60%
+    ),
+    radial-gradient(900px 500px at 92% 0%, #fbefe6 0%, rgba(251, 239, 230, 0) 55%);
+  background-attachment: fixed;
+  color: var(--ink);
+  font-family: var(--sans);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--serif);
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+/* ---------- primitives ---------- */
+
+.wrap {
+  max-width: 1020px;
+  margin: 0 auto;
+  padding: 28px 20px 72px;
+}
+
+.card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 24px 26px;
+  box-shadow: var(--sh2);
+}
+
+.btn {
+  appearance: none;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 0.55rem 1.15rem;
+  cursor: pointer;
+  border: 1px solid var(--line2);
+  background: var(--paper2);
+  color: var(--ink);
+  transition: 0.16s;
+  box-shadow: 0 1px 2px rgba(61, 53, 44, 0.05);
+  text-decoration: none;
+  display: inline-block;
+}
+.btn:hover {
+  background: #f7efe3;
+  transform: translateY(-1px);
+}
+.btn:active {
+  transform: translateY(0);
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+.btn.primary {
+  background: var(--clay);
+  border-color: var(--clay-d);
+  color: #fff8f2;
+  box-shadow: 0 3px 10px -3px rgba(165, 92, 63, 0.6);
+}
+.btn.primary:hover {
+  background: var(--clay-d);
+}
+.btn.sage {
+  background: var(--sage);
+  border-color: #5c7b58;
+  color: #f5faf3;
+  box-shadow: 0 3px 10px -3px rgba(92, 123, 88, 0.6);
+}
+.btn.sage:hover {
+  background: #5c7b58;
+}
+.btn.ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ink2);
+}
+.btn.ghost:hover {
+  background: var(--paper2);
+  color: var(--ink);
+}
+.btn.sm {
+  font-size: 0.83rem;
+  padding: 0.38rem 0.85rem;
+}
+
+/*
+ * Body used to be `display:grid; place-items:center`, which the sign-in, sign-up and
+ * no-access pages relied on. A full landing page cannot live inside that, so the
+ * centring moved here and those pages opt in explicitly.
+ */
+.screen-center {
   min-height: 100dvh;
   display: grid;
   place-items: center;
   padding: 32px 16px;
-  background: #faf6ef;
-  color: #3d352c;
-  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    Roboto, Helvetica, Arial, sans-serif;
 }

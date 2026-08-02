@@ -10,5 +10,9 @@ export default function SignOutPage() {
     signOut({ redirectUrl: "/sign-in" });
   }, [signOut]);
 
-  return <p>Signing out…</p>;
+  return (
+    <div className="screen-center">
+      <p style={{ color: "var(--ink2)" }}>Signing out…</p>
+    </div>
+  );
 }

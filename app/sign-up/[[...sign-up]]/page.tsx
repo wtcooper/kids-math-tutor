@@ -6,8 +6,12 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-// Reachable only to finish an invitation — Clerk's restricted mode refuses
-// anyone without one.
+// Reachable only to finish an invitation — Clerk's restricted mode refuses anyone
+// uninvited, and the people table refuses anyone not on it even if they get an account.
 export default function SignUpPage() {
-  return <SignUp />;
+  return (
+    <div className="screen-center">
+      <SignUp />
+    </div>
+  );
 }

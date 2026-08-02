@@ -6,6 +6,12 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
+// .screen-center rather than relying on body centring: body used to be a centring grid,
+// which a full landing page cannot live inside.
 export default function SignInPage() {
-  return <SignIn />;
+  return (
+    <div className="screen-center">
+      <SignIn />
+    </div>
+  );
 }
