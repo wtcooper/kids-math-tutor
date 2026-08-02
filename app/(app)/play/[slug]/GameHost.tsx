@@ -34,6 +34,7 @@ const LOADERS = {
     loading: Loading,
   }),
   tiles: dynamic(() => import("./_games/tiles/Tiles"), { ssr: false, loading: Loading }),
+  cut: dynamic(() => import("./_games/cut/Cut"), { ssr: false, loading: Loading }),
 } satisfies Record<GameImpl, unknown>;
 
 /** Every game component takes exactly this. */

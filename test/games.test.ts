@@ -33,6 +33,12 @@ import {
   MAX_TILES,
   type Placed,
 } from "../app/(app)/play/[slug]/_games/tiles/tiles-model";
+import {
+  fillsExactly,
+  genCut,
+  simplify,
+  workableDenoms,
+} from "../app/(app)/play/[slug]/_games/cut/cut-model";
 
 const LEVELS = [1, 2, 3, 4];
 const SEEDS = 300;
@@ -241,6 +247,52 @@ describe("Tiles", () => {
         // on show — which is the entire point of the game.
         expect(d.hundreds, `L${level}: ${p.a}x${p.b} has no hundred`).toBeGreaterThan(0);
         expect(d.ones, `L${level}: ${p.a}x${p.b} has no ones corner`).toBeGreaterThan(0);
+      }
+    }
+  });
+});
+
+describe("Cut", () => {
+  it("every gap can actually be filled by something you can cut to", () => {
+    for (let level = 1; level <= 4; level++) {
+      for (let s = 0; s < 200; s++) {
+        const rand = mulberry32(10000 + s);
+        const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+        const p = genCut(level, rnd);
+        const ok = workableDenoms(p.gap, p.reachable);
+        expect(ok.length, `L${level}: ${p.gap.n}/${p.gap.d} cannot be filled`).toBeGreaterThan(0);
+        // More than one way, or there is no equivalence to discover.
+        expect(ok.length, `L${level}: ${p.gap.n}/${p.gap.d} has only one solution`).toBeGreaterThan(1);
+      }
+    }
+  });
+
+  it("only an exact fill counts, using integer arithmetic", () => {
+    const gap = { n: 3, d: 4 };
+    expect(fillsExactly(gap, 4, 3)).toBe(true);
+    expect(fillsExactly(gap, 8, 6)).toBe(true);
+    expect(fillsExactly(gap, 12, 9)).toBe(true);
+    expect(fillsExactly(gap, 8, 5)).toBe(false);
+    expect(fillsExactly(gap, 8, 7)).toBe(false);
+    // Thirds cannot tile three quarters, however many you lay.
+    for (let n = 1; n <= 40; n++) expect(fillsExactly(gap, 3, n)).toBe(false);
+  });
+
+  it("a third of a brick three times is exactly one brick", () => {
+    // The float trap this game would fall into: 1/3 + 1/3 + 1/3 !== 1 in doubles.
+    expect(fillsExactly({ n: 1, d: 1 }, 3, 3)).toBe(true);
+    expect(fillsExactly({ n: 2, d: 3 }, 3, 2)).toBe(true);
+    expect(fillsExactly({ n: 2, d: 3 }, 9, 6)).toBe(true);
+  });
+
+  it("the simplest workable slicing is the gap in lowest terms", () => {
+    for (let level = 1; level <= 4; level++) {
+      for (let s = 0; s < 120; s++) {
+        const rand = mulberry32(11000 + s);
+        const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+        const p = genCut(level, rnd);
+        const [, sd] = simplify(p.gap.n, p.gap.d);
+        expect(workableDenoms(p.gap, p.reachable)[0], `${p.gap.n}/${p.gap.d}`).toBe(sd);
       }
     }
   });

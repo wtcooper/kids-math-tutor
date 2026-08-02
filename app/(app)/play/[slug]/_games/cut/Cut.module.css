@@ -1,0 +1,86 @@
+.pip {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 0.82rem;
+}
+.soft { color: var(--ink3); font-size: 0.82rem }
+.over { color: #8c4750; font-size: 0.82rem; font-weight: 600 }
+.mini {
+  appearance: none;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink2);
+  border-radius: 999px;
+  padding: 3px 12px;
+}
+.mini:hover { border-color: var(--ink3); color: var(--ink) }
+
+.stage {
+  position: relative;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 20px;
+}
+
+.tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px }
+.toolLabel {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink3);
+}
+.tool {
+  appearance: none;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink2);
+  border-radius: 999px;
+  padding: 5px 14px;
+}
+.tool:hover:not(:disabled) { border-color: var(--line2); color: var(--ink) }
+.tool:disabled { opacity: 0.45; cursor: default }
+
+.wall { width: 100%; height: auto; display: block }
+.cap { font-size: 12px; fill: #9a8b7c; font-family: ui-sans-serif, system-ui, sans-serif }
+.hit { cursor: pointer }
+
+.actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px }
+.hint { color: var(--ink3); font-size: 0.86rem; margin: 12px 0 0 }
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(250, 246, 239, 0.9);
+  border-radius: 18px;
+  padding: 16px;
+}
+.panel { max-width: 440px }
+.h2 { font-family: Georgia, serif; font-size: 1.45rem; margin: 0 0 4px }
+.sub { color: var(--ink2); margin: 0 0 16px }
+
+.eqLine { display: flex; align-items: center; gap: 14px; margin-bottom: 14px }
+.frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 1.15rem;
+  line-height: 1.15;
+}
+.frac .bar { display: block; width: 100%; min-width: 24px; height: 1px; background: var(--ink2); margin: 2px 0 }
+.hi { color: var(--sage-d) }
+.hi .bar { background: var(--sage-d) }
+.eq { color: var(--ink3); font-size: 1.1rem }
+
+.note { color: var(--ink2); font-size: 0.92rem; line-height: 1.55; margin: 0 0 18px }

@@ -11,7 +11,13 @@
  */
 
 /** The component that gets dynamically imported. Several games may share one. */
-export type GameImpl = "crossing" | "munchers" | "split" | "enclosure" | "tiles";
+export type GameImpl =
+  | "crossing"
+  | "munchers"
+  | "split"
+  | "enclosure"
+  | "tiles"
+  | "cut";
 
 export interface GameMeta {
   /** Route: /play/<slug>. Stable — it is what her bookmarks point at. */
@@ -107,6 +113,16 @@ export const GAMES: readonly GameMeta[] = [
       "Up to 24 × 24",
       "Up to 34 × 24",
     ],
+  },
+  {
+    slug: "cut",
+    impl: "cut",
+    name: "Cut",
+    topicId: "frac-equiv",
+    blurb:
+      "Slice a brick until the pieces fill the gap exactly. Same width of wall, different name.",
+    focus: "understanding",
+    levelNames: ["Halves & quarters", "Sixths & eighths", "Twelfths", "Sixteenths & more"],
   },
 ];
 
