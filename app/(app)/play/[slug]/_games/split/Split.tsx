@@ -7,20 +7,31 @@ import { PhaserGame, type GameBus, type GameEvent } from "@/components/game/Phas
 import { GameChrome } from "@/components/game/GameChrome";
 import { useAttemptRecorder } from "@/components/game/useAttemptRecorder";
 import type { HowTo } from "@/components/game/HowToPlay";
+import type { Workings } from "@/components/game/Workings";
 import { tutorHref } from "@/lib/topics";
 import type { GameProps } from "../../GameHost";
 import { createSplitScene } from "./SplitScene";
 import styles from "./Split.module.css";
+
+/** Just enough of the scene's shape to answer the factor question from React. */
+interface SplitSceneLike {
+  answerSplit(a: number, b: number): void;
+  cancelSplit(): void;
+}
+interface PhaserGameLike {
+  scene: { getScene(key: string): unknown };
+}
 
 const HOW_TO: HowTo = {
   goal: "Break every rock down until only primes are left floating.",
   controls: [
     "Move your finger or the mouse to slide the ship left and right.",
     "Tap to shoot straight up — line up under a rock first.",
+    "Then pick the two factors, or type one and the other follows.",
     "Arrow keys work too: ← → to move, space to shoot.",
   ],
   rules: [
-    "Shoot a rock and it splits into two numbers that multiply to make it.",
+    "Shoot a rock and you have to say what it breaks into — two numbers that multiply to make it.",
     "A prime cannot be split — the shot bounces off and it stays in your way.",
     "So the board fills up with the primes you made. That pile is the answer.",
     "No timer, and nothing can hurt you.",
@@ -28,6 +39,9 @@ const HOW_TO: HowTo = {
 };
 
 interface Live {
+  /** The rock she has shot and must factorise, or null when flying. */
+  asking: number | null;
+  pairs: [number, number][];
   started: number[];
   left: number;
   primes: number[];
@@ -64,6 +78,8 @@ export default function Split({
 }: GameProps) {
   const [level, setLevel] = useState(initialLevel);
   const [live, setLive] = useState<Live | null>(null);
+  const [guess, setGuess] = useState("");
+  const [wrong, setWrong] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const busRef = useRef<GameBus | null>(null);
   const recorder = useAttemptRecorder({ gameSlug: slug, level });
@@ -75,7 +91,12 @@ export default function Split({
         return;
       }
       if (e.type === "state") {
-        setLive(e.payload as Live);
+        const next = e.payload as Live;
+        setLive(next);
+        if (!next.asking) {
+          setGuess("");
+          setWrong(false);
+        }
         return;
       }
       if (e.type === "round:complete") {
@@ -104,6 +125,57 @@ export default function Split({
     busRef.current?.send({ type: "level:set", level: next });
   }, []);
 
+  /** Reach the running scene to answer the factor question. */
+  const scene = () => {
+    const host = document.querySelector<HTMLElement & { __phaserGame?: PhaserGameLike }>(
+      "[data-phaser-host]",
+    );
+    return host?.__phaserGame?.scene.getScene("split") as SplitSceneLike | undefined;
+  };
+
+  const submitPair = useCallback(
+    (a: number, b: number) => {
+      const s = scene();
+      if (!s) return;
+      if (a * b !== (live?.asking ?? 0)) {
+        setWrong(true);
+        return;
+      }
+      setWrong(false);
+      setGuess("");
+      s.answerSplit(a, b);
+    },
+    [live],
+  );
+
+  const workings: Workings = useMemo(() => {
+    if (!live) return { now: "Getting the rocks ready…" };
+    if (live.asking) {
+      return {
+        now: `What two numbers multiply to make ${live.asking}?`,
+        listTitle: "Try them in turn",
+        lines: [2, 3, 4, 5, 6, 7]
+          .filter((d) => d * d <= live.asking!)
+          .map((d) => ({
+            text: `${live.asking} ÷ ${d} = ${
+              live.asking! % d === 0 ? live.asking! / d : "not exact"
+            }`,
+            state: (live.asking! % d === 0 ? "current" : "todo") as "current" | "todo",
+          })),
+        hint: `Go up through 2, 3, 4, 5… and stop at the first one that divides ${live.asking} exactly. Both halves must be bigger than 1.`,
+      };
+    }
+    return {
+      now:
+        live.left > 0
+          ? "Line up under a rock and shoot it. Only the ones that are not prime will break."
+          : "Nothing left but primes.",
+      listTitle: live.primes.length ? "Primes on the board" : undefined,
+      lines: live.primes.map((p) => ({ text: String(p), state: "done" as const })),
+      hint: "A prime has no factors except 1 and itself, so shooting it does nothing but leave it in your way.",
+    };
+  }, [live]);
+
   return (
     <GameChrome
       slug={slug}
@@ -113,8 +185,10 @@ export default function Split({
       levels={levels}
       level={level}
       onLevel={changeLevel}
-      instructions="Shoot a rock to break it into two factors. Primes will not break — they just get in the way."
+      instructions="Line up under a rock and shoot, then say what two numbers it breaks into."
       howTo={HOW_TO}
+      workings={workings}
+      workingsKey={live?.asking ?? "flying"}
       status={
         live ? (
           <>
@@ -129,6 +203,60 @@ export default function Split({
       }
     >
       <PhaserGame createScenes={createScenes} onEvent={onEvent} busRef={busRef} />
+
+      {live?.asking ? (
+        <div className={styles.askScrim}>
+          <div className={`card ${styles.ask}`}>
+            <p className={styles.askQ}>
+              <strong>{live.asking}</strong> breaks into…
+            </p>
+            <div className={styles.pairs}>
+              {live.pairs.map(([a, b]) => (
+                <button
+                  key={`${a}x${b}`}
+                  type="button"
+                  className={styles.pair}
+                  onClick={() => submitPair(a, b)}
+                >
+                  {a} × {b}
+                </button>
+              ))}
+            </div>
+            <div className={styles.typeRow}>
+              <span className={styles.typeLabel}>or type one factor</span>
+              <input
+                className={styles.typed}
+                inputMode="numeric"
+                value={guess}
+                placeholder="?"
+                aria-label={`A factor of ${live.asking}`}
+                onChange={(e) => {
+                  setGuess(e.target.value.replace(/[^\d]/g, "").slice(0, 4));
+                  setWrong(false);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter") return;
+                  const a = Number(guess);
+                  if (!a || a < 2 || live.asking! % a !== 0 || a === live.asking) {
+                    setWrong(true);
+                    return;
+                  }
+                  submitPair(a, live.asking! / a);
+                }}
+              />
+              {guess && live.asking % Number(guess) === 0 && Number(guess) > 1 ? (
+                <span className={styles.other}>× {live.asking / Number(guess)}</span>
+              ) : null}
+            </div>
+            {wrong ? (
+              <p className={styles.askWrong}>
+                That does not divide {live.asking} exactly. Both halves have to be whole
+                numbers bigger than 1.
+              </p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
       {result ? (
         <div className={styles.overlay}>
           <div className={`card ${styles.panel}`}>

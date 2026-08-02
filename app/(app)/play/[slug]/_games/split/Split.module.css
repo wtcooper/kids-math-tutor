@@ -42,3 +42,45 @@
 
 .foot { color: var(--ink3); font-size: 0.84rem; margin: 0 0 18px }
 .actions { display: flex; gap: 10px; flex-wrap: wrap }
+
+/* The factor question, over the paused canvas. */
+.askScrim {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(250, 246, 239, 0.82);
+  border-radius: 18px;
+  padding: 16px;
+}
+.ask { max-width: 420px; text-align: center }
+.askQ { margin: 0 0 14px; font-size: 1.1rem; color: var(--ink2) }
+.askQ strong { font-family: var(--mono); font-size: 1.5rem; color: var(--ink) }
+.pairs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 14px }
+.pair {
+  appearance: none;
+  font: inherit;
+  font-family: var(--mono);
+  font-size: 1rem;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 8px 14px;
+}
+.pair:hover { border-color: var(--clay-d); color: var(--clay-d) }
+.typeRow { display: flex; align-items: center; gap: 8px; justify-content: center }
+.typeLabel { font-size: 0.8rem; color: var(--ink3) }
+.typed {
+  width: 4rem;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 1rem;
+  padding: 5px;
+  border: 1px solid var(--line2);
+  border-radius: 8px;
+  background: var(--paper);
+}
+.other { font-family: var(--mono); color: var(--sage-d); font-weight: 600 }
+.askWrong { margin: 12px 0 0; color: #8c4750; font-size: 0.86rem; line-height: 1.5 }

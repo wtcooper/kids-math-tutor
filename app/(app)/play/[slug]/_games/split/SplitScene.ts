@@ -57,14 +57,23 @@ interface Shot {
 }
 
 /**
- * Smallest factor pair of n, both > 1. Returned smallest-first so the split is the one
- * she would write in a factor tree.
+ * Smallest factor pair of n, both > 1. Used to decide whether a rock *can* be split at
+ * all — she chooses which pair to actually use.
  */
 export function splitPair(n: number): [number, number] | null {
   for (let d = 2; d * d <= n; d++) {
     if (n % d === 0) return [d, n / d];
   }
   return null;
+}
+
+/** Every way to write n as a product of two factors above 1, smallest factor first. */
+export function factorPairs(n: number): [number, number][] {
+  const out: [number, number][] = [];
+  for (let d = 2; d * d <= n; d++) {
+    if (n % d === 0) out.push([d, n / d]);
+  }
+  return out;
 }
 
 /** How many rocks a starting number will eventually become — its prime-factor count. */
@@ -116,6 +125,8 @@ export function createSplitScene(P: typeof Phaser, config: { level: number }) {
     private pointerX = W / 2;
     private cooldown = 0;
     private startedWith: number[] = [];
+    /** The rock she has shot and must now factorise. Play is paused while it is set. */
+    private pending: Rock | null = null;
     private askedAt = 0;
     private splits = 0;
     private bounces = 0;
@@ -185,6 +196,7 @@ export function createSplitScene(P: typeof Phaser, config: { level: number }) {
       this.shots = [];
       this.splits = 0;
       this.bounces = 0;
+      this.pending = null;
 
       this.startedWith = startingNumbers(this.level, this.rnd);
       this.startedWith.forEach((n, i) => {
@@ -207,6 +219,8 @@ export function createSplitScene(P: typeof Phaser, config: { level: number }) {
       this.bus.emit({
         type: "state",
         payload: {
+          asking: this.pending ? this.pending.value : null,
+          pairs: this.pending ? factorPairs(this.pending.value) : [],
           started: [...this.startedWith],
           left: this.rocks.filter((r) => !r.dead && !r.prime).length,
           primes: this.rocks
@@ -274,10 +288,32 @@ export function createSplitScene(P: typeof Phaser, config: { level: number }) {
 
       const pair = splitPair(rock.value);
 
+      if (pair) {
+        /*
+         * The whole point of the rebuild. The game used to pick the factor pair itself,
+         * so she could clear a board without naming a single factor — she was only
+         * aiming. Now the shot opens the question and SHE says what it breaks into.
+         */
+        this.pending = rock;
+        this.scene.pause();
+        this.bus.emit({
+          type: "state",
+          payload: {
+            asking: rock.value,
+            pairs: factorPairs(rock.value),
+            started: [...this.startedWith],
+            left: this.rocks.filter((r) => !r.dead && !r.prime).length,
+            primes: this.rocks.filter((r) => !r.dead && r.prime).map((r) => r.value).sort((a, b) => a - b),
+            splits: this.splits,
+          },
+        });
+        return;
+      }
+
       this.bus.emit({
         type: "attempt",
         prompt: { n: rock.value, prime: rock.prime },
-        response: { shot: true, split: Boolean(pair), into: pair ?? null },
+        response: { shot: true, split: false, into: null },
         elapsedMs: Math.max(0, Math.round(this.time.now - this.askedAt)),
       });
       this.askedAt = this.time.now;
@@ -295,20 +331,44 @@ export function createSplitScene(P: typeof Phaser, config: { level: number }) {
         this.pushState();
         return;
       }
+    }
 
+    /**
+     * She has named a factor pair for the rock she shot. Called from the host, because
+     * the question is rendered in HTML — a number pad in a canvas is a bad number pad.
+     */
+    answerSplit(a: number, b: number) {
+      const rock = this.pending;
+      if (!rock || rock.dead) return;
+      const ok = a > 1 && b > 1 && a * b === rock.value;
+
+      this.bus.emit({
+        type: "attempt",
+        prompt: { n: rock.value, prime: false },
+        response: { shot: true, split: ok, into: ok ? [a, b] : null },
+        elapsedMs: Math.max(0, Math.round(this.time.now - this.askedAt)),
+      });
+      this.askedAt = this.time.now;
+      if (!ok) return;
+
+      this.pending = null;
+      this.scene.resume();
       this.splits++;
       rock.dead = true;
       const { x, y } = rock.container;
       rock.container.destroy();
-
-      // The two factors fly apart sideways, so the split reads as one thing becoming two
-      // — and neither half lands straight back in the shot's path.
-      const [a, b] = pair;
       this.addRock(a, x - 40, y - 10);
       this.addRock(b, x + 40, y + 10);
       this.pushState();
 
       if (this.rocks.filter((r) => !r.dead && !r.prime).length === 0) this.complete();
+    }
+
+    /** She gave up on this rock; put it back and carry on. */
+    cancelSplit() {
+      this.pending = null;
+      this.scene.resume();
+      this.pushState();
     }
 
     private complete() {

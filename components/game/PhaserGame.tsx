@@ -126,5 +126,5 @@ export function PhaserGame({ createScenes, onEvent, busRef }: PhaserGameProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return <div ref={hostRef} className={styles.host} />;
+  return <div ref={hostRef} className={styles.host} data-phaser-host="" />;
 }
