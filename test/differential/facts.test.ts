@@ -12,7 +12,7 @@
  * tests take over.
  */
 import { describe, expect, it } from "vitest";
-// @ts-expect-error - plain .mjs helper, no types
+// @ts-ignore - plain .mjs helper, no types
 import { loadOracle } from "../../scripts/oracle.mjs";
 import { FACT_LEVELS, card, fams, factHookHtml, deckFor } from "@/lib/math/facts";
 import { richToText } from "@/lib/math/format";

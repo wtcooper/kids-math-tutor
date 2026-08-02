@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-// @ts-expect-error - plain .mjs helper, no types
+// @ts-ignore - plain .mjs helper, no types
 import { loadOracle } from "../../scripts/oracle.mjs";
 import { makeRng, mulberry32 } from "@/lib/math/rng";
 import {

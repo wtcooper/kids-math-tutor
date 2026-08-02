@@ -4,6 +4,7 @@ import { requireAllowedPerson } from "@/lib/auth/person";
 import { BY_ID } from "@/lib/topics";
 import { ABOUT } from "@/lib/topics.about";
 import { GAMES } from "@/lib/games";
+import { runtimeFor } from "@/lib/math/registry";
 import { TutorShell } from "@/components/tutor/TutorShell";
 
 interface Props {
@@ -19,7 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: topic ? `${topic.name} — The Math Table` : "The Math Table" };
 }
 
-const MODES = ["learn", "drill", "practice"] as const;
+const MODES = ["learn", "drill", "picture", "watch", "try", "practice"] as const;
 type Mode = (typeof MODES)[number];
 
 export default async function TutorTopicPage({ params, searchParams }: Props) {
@@ -39,12 +40,18 @@ export default async function TutorTopicPage({ params, searchParams }: Props) {
 
   const isFacts = topic.engine === "facts";
   const requested = MODES.includes(mode as Mode) ? (mode as Mode) : undefined;
+
   // A mode that does not exist for this engine falls back rather than rendering nothing.
+  // Flashcards only ever have Learn/Drill; the step modes need a ported build().
+  const hasSteps = Boolean(runtimeFor(topicId)?.build);
+  const stepModes: Mode[] = ["picture", "watch", "try"];
   const safeMode: Mode = isFacts
     ? requested === "drill"
       ? "drill"
       : "learn"
-    : "practice";
+    : hasSteps && requested && stepModes.includes(requested)
+      ? requested
+      : "practice";
 
   const game = GAMES[topicId];
 

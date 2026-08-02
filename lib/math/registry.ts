@@ -13,6 +13,15 @@ import type { Rng } from "./rng";
 import type { StepsModel } from "./types";
 import { buildFactors } from "./topics/factors";
 import { buildExponents, buildPemdas, buildPlace } from "./builds/whole-numbers";
+import { buildFracAddSub, buildFracEquiv, buildFracMixed, buildFracMulDiv } from "./builds/fractions";
+import {
+  buildDecMulDiv,
+  buildEquations,
+  buildGeometry,
+  buildIntegers,
+  buildPercent,
+  buildRatio,
+} from "./builds/rates-algebra";
 import { BY_ID, type Topic } from "@/lib/topics";
 
 import { addAnswer, addHint, addTitle, genAdd, genSub, subAnswer, subHint, subTitle } from "./topics/add-sub";
@@ -198,6 +207,7 @@ const R: Record<string, TopicRuntime<any>> = {
     fields: one(),
     check: (p, v) => String(v.q ?? "").replace(/\s/g, "") === fracEquivAnswer(p),
     answer: fracEquivAnswer,
+    build: buildFracEquiv,
   },
   "frac-mixed": {
     id: "frac-mixed",
@@ -207,6 +217,7 @@ const R: Record<string, TopicRuntime<any>> = {
     check: (p, v) =>
       String(v.q ?? "").replace(/\s+/g, " ").trim() === fracMixedAnswer(p),
     answer: fracMixedAnswer,
+    build: buildFracMixed,
   },
   "frac-addsub": {
     id: "frac-addsub",
@@ -221,6 +232,7 @@ const R: Record<string, TopicRuntime<any>> = {
       const [n, d] = fracAddSubAnswer(p);
       return fracText(n, d);
     },
+    build: buildFracAddSub,
   },
   "frac-muldiv": {
     id: "frac-muldiv",
@@ -235,6 +247,7 @@ const R: Record<string, TopicRuntime<any>> = {
       const [n, d] = fracMulDivAnswer(p);
       return fracText(n, d);
     },
+    build: buildFracMulDiv,
   },
   "dec-muldiv": {
     id: "dec-muldiv",
@@ -243,6 +256,7 @@ const R: Record<string, TopicRuntime<any>> = {
     fields: one(),
     check: (p, v) => rd(num(v.q), 4) === rd(decMulDivAnswer(p), 4),
     answer: (p) => String(rd(decMulDivAnswer(p), 4)),
+    build: buildDecMulDiv,
   },
   percent: {
     id: "percent",
@@ -253,6 +267,7 @@ const R: Record<string, TopicRuntime<any>> = {
       String(v.q ?? "").replace(/\s+/g, " ").trim().replace(/%$/, "") ===
       percentAnswer(p).replace(/%$/, ""),
     answer: percentAnswer,
+    build: buildPercent,
   },
   ratio: {
     id: "ratio",
@@ -261,6 +276,7 @@ const R: Record<string, TopicRuntime<any>> = {
     fields: one(),
     check: (p, v) => num(v.q) === ratioAnswer(p),
     answer: (p) => fmt(ratioAnswer(p)),
+    build: buildRatio,
   },
   integers: {
     id: "integers",
@@ -269,6 +285,7 @@ const R: Record<string, TopicRuntime<any>> = {
     fields: one(),
     check: (p, v) => num(v.q) === integerAnswer(p),
     answer: (p) => String(integerAnswer(p)),
+    build: buildIntegers,
   },
   equations: {
     id: "equations",
@@ -277,6 +294,7 @@ const R: Record<string, TopicRuntime<any>> = {
     fields: one("x"),
     check: (p, v) => num(v.q) === equationAnswer(p),
     answer: (p) => String(equationAnswer(p)),
+    build: buildEquations,
   },
   geometry: {
     id: "geometry",
@@ -285,6 +303,7 @@ const R: Record<string, TopicRuntime<any>> = {
     fields: one(),
     check: (p, v) => rd(num(v.q), 6) === rd(geometryAnswer(p), 6),
     answer: (p) => String(rd(geometryAnswer(p), 6)),
+    build: buildGeometry,
   },
 };
 /* eslint-enable @typescript-eslint/no-explicit-any */
