@@ -58,7 +58,10 @@ function GridRows({
   return (
     <>
         {model.rows.map((row, ri) => {
-          if (row.from !== undefined && row.from >= reveal) return null;
+          // In You try every row is on screen from the start — she needs to see the whole
+          // shape of the work to fill it in. Only Watch it reveals row by row.
+          const rowHidden = !interactive && row.from !== undefined && row.from >= reveal;
+          if (rowHidden) return null;
           return (
             <div
               key={ri}

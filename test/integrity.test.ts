@@ -293,3 +293,31 @@ describe("You try is completable, and its boxes are in the right places", () => 
     }
   });
 });
+
+describe("You try shows the whole shape of the work at once", () => {
+  it("every answer box exists from the first render, not one row at a time", () => {
+    // The original rendered every input row immediately in You try — she needs to see
+    // how much work there is. Only Watch it reveals progressively.
+    for (const topic of nonFacts) {
+      const rt = runtimeFor(topic.id)!;
+      if (!rt.gridBuild) continue;
+      for (let lvl = 1; lvl <= topic.levels.length; lvl++) {
+        const rng = makeRng(mulberry32(8500 + lvl));
+        for (let i = 0; i < 20; i++) {
+          const p = rt.gen(lvl, rng);
+          const m = rt.gridBuild(p);
+          const tag = `${topic.id} L${lvl} — ${rt.title(p)}`;
+
+          // Count the slot-bearing cells that a You-try render would produce. Since
+          // interactive mode ignores row.from, that must be every slot in the model.
+          const rendered = m.rows.flatMap((r) =>
+            r.cells.filter((c) => c.slot !== undefined).map((c) => c.slot!),
+          );
+          expect(new Set(rendered).size, `${tag}: not every slot renders`).toBe(
+            m.slots.length,
+          );
+        }
+      }
+    }
+  });
+});
