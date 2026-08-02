@@ -65,6 +65,13 @@ import {
   runResults,
   tidyText,
 } from "../app/(app)/play/[slug]/_games/machine/machine-model";
+import {
+  bestProfit,
+  genDay,
+  maxTrays,
+  pence,
+  simulate,
+} from "../app/(app)/play/[slug]/_games/bakery/bakery-model";
 
 const LEVELS = [1, 2, 3, 4];
 const SEEDS = 300;
@@ -529,5 +536,78 @@ describe("The Machine Shop", () => {
         for (const t of p.targets) expect(Number.isFinite(t)).toBe(true);
       }
     }
+  });
+});
+
+describe("The Bakery", () => {
+  it("every day's target is actually achievable", () => {
+    for (let level = 1; level <= 4; level++) {
+      for (let s = 0; s < 60; s++) {
+        const rand = mulberry32(21000 + s);
+        const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+        const day = genDay(level, rnd);
+        expect(day.target, `L${level}: target ${day.target} > best ${bestProfit(day)}`)
+          .toBeLessThanOrEqual(bestProfit(day));
+        expect(day.target).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("the target cannot be hit by ignoring the unit rate and the price together", () => {
+    // If any choice at all met the target, the maths would not be load-bearing.
+    for (let level = 2; level <= 4; level++) {
+      for (let s = 0; s < 40; s++) {
+        const rand = mulberry32(22000 + s);
+        const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+        const day = genDay(level, rnd);
+        let met = 0;
+        let total = 0;
+        for (let o = 0; o < day.offers.length; o++) {
+          for (let t = 1; t <= maxTrays(day, day.offers[o]); t++) {
+            for (let m = 0; m < day.markups.length; m++) {
+              for (const c of [false, true]) {
+                const r = simulate(day, { offerIndex: o, trays: t, markupIndex: m, clearance: c });
+                if (r.overBaked) continue;
+                total++;
+                if (r.metTarget) met++;
+              }
+            }
+          }
+        }
+        expect(met, `L${level}: no way to hit the target`).toBeGreaterThan(0);
+        expect(met / total, `L${level}: ${met}/${total} choices hit it — too easy`).toBeLessThan(0.7);
+      }
+    }
+  });
+
+  it("money stays in whole pence", () => {
+    for (let s = 0; s < 60; s++) {
+      const rand = mulberry32(23000 + s);
+      const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+      const day = genDay(3, rnd);
+      const r = simulate(day, { offerIndex: 0, trays: 2, markupIndex: 0, clearance: true });
+      for (const v of [r.flourCost, r.costPerBun, r.price, r.salePrice, r.revenue, r.profit]) {
+        expect(Number.isInteger(v), `${v} is not whole pence`).toBe(true);
+      }
+    }
+  });
+
+  it("baking more than the flour allows is refused rather than sold", () => {
+    const rand = mulberry32(24000);
+    const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+    const day = genDay(2, rnd);
+    const tooMany = maxTrays(day, day.offers[0]) + 3;
+    const r = simulate(day, { offerIndex: 0, trays: tooMany, markupIndex: 0, clearance: false });
+    expect(r.overBaked).toBe(true);
+    expect(r.sold).toBe(0);
+    expect(r.metTarget).toBe(false);
+  });
+
+  it("formats money without float dust", () => {
+    expect(pence(0)).toBe("£0.00");
+    expect(pence(5)).toBe("£0.05");
+    expect(pence(460)).toBe("£4.60");
+    expect(pence(1234)).toBe("£12.34");
+    expect(pence(-250)).toBe("−£2.50");
   });
 });

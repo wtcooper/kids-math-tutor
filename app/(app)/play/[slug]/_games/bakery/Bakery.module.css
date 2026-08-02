@@ -1,0 +1,110 @@
+.pip {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 0.82rem;
+}
+.soft { color: var(--ink3); font-size: 0.82rem }
+
+.stage {
+  position: relative;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 22px;
+}
+.step { margin-bottom: 20px }
+.h3 {
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin: 0 0 10px;
+}
+
+.offers { display: flex; gap: 10px; flex-wrap: wrap }
+.offer {
+  appearance: none;
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--line);
+  background: transparent;
+  border-radius: 12px;
+  padding: 10px 16px;
+  text-align: left;
+  min-width: 120px;
+}
+.offer:hover:not(:disabled) { border-color: var(--line2) }
+.offer.on { background: var(--clay-s); border-color: #e6c3ae }
+.offer:disabled { opacity: 0.6; cursor: default }
+.offerSize { font-weight: 600; font-size: 1rem }
+.offerPrice { font-family: var(--mono); font-size: 0.9rem; color: var(--ink2) }
+.offerRate { font-size: 0.76rem; color: var(--ink3) }
+
+.row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap }
+.step10 {
+  appearance: none;
+  font: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 8px;
+  color: var(--ink2);
+}
+.step10:disabled { opacity: 0.4; cursor: default }
+.trays { font-family: var(--mono); font-size: 1.3rem; min-width: 1.6em; text-align: center }
+.unit { color: var(--ink2) }
+.calc { color: var(--ink3); font-size: 0.86rem; font-family: var(--mono) }
+.made { color: var(--ink2); font-size: 0.92rem; margin: 10px 0 0 }
+
+.markups { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px }
+.markup {
+  appearance: none;
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--line);
+  background: transparent;
+  border-radius: 12px;
+  padding: 8px 16px;
+  min-width: 96px;
+}
+.markup:hover:not(:disabled) { border-color: var(--line2) }
+.markup.on { background: var(--sage-s); border-color: #cfe0ca }
+.markup:disabled { opacity: 0.6; cursor: default }
+.markupPct { font-weight: 600 }
+.markupPrice { font-family: var(--mono); font-size: 0.84rem; color: var(--ink2) }
+
+.check { display: flex; align-items: center; gap: 9px; color: var(--ink2); font-size: 0.92rem }
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(250, 246, 239, 0.93);
+  border-radius: 18px;
+  padding: 16px;
+}
+.panel { max-width: 420px }
+.h2 { font-family: Georgia, serif; font-size: 1.45rem; margin: 0 0 14px }
+
+.till { width: 100%; border-collapse: collapse; margin-bottom: 14px }
+.till td { padding: 5px 0; font-size: 0.94rem; color: var(--ink2) }
+.money { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums }
+.dim td { color: var(--ink3) }
+.total td { border-top: 1px solid var(--line); padding-top: 9px; font-weight: 600; color: var(--ink) }
+.good { color: var(--sage-d) }
+.bad { color: #8c4750 }
+
+.note { color: var(--ink2); font-size: 0.9rem; line-height: 1.55; margin: 0 0 18px }
+.actions { display: flex; gap: 10px; flex-wrap: wrap }

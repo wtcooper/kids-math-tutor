@@ -20,7 +20,8 @@ export type GameImpl =
   | "cut"
   | "beam"
   | "balance"
-  | "machine";
+  | "machine"
+  | "bakery";
 
 export interface GameMeta {
   /** Route: /play/<slug>. Stable — it is what her bookmarks point at. */
@@ -161,6 +162,16 @@ export const GAMES: readonly GameMeta[] = [
       "A hopper",
       "It must work for any n",
     ],
+  },
+  {
+    slug: "bakery",
+    impl: "bakery",
+    name: "The Bakery",
+    topicId: "percent",
+    blurb:
+      "Buy flour, bake, set a price. Nothing is marked right — the till just tells you how the day went.",
+    focus: "understanding",
+    levelNames: ["Two sacks", "More markups", "Three sacks", "Tight margins"],
   },
 ];
 

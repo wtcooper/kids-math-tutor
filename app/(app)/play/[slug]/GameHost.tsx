@@ -44,6 +44,10 @@ const LOADERS = {
     ssr: false,
     loading: Loading,
   }),
+  bakery: dynamic(() => import("./_games/bakery/Bakery"), {
+    ssr: false,
+    loading: Loading,
+  }),
 } satisfies Record<GameImpl, unknown>;
 
 /** Every game component takes exactly this. */
