@@ -143,11 +143,16 @@ export function loadOracle(random = Math.random, htmlPath = DEFAULT_HTML) {
   if (closeIife < 0) throw new Error("oracle: could not find the IIFE close");
   code = code.slice(0, closeIife) + EXPORTS + code.slice(closeIife);
 
-  const sandbox = makeSandbox(random);
+  // The tutor's boot sequence ends with initFacts(), which shuffles a deck and therefore
+  // consumes random numbers. Anything comparing generator streams must be able to reset
+  // the source *after* boot, or the oracle starts several draws ahead of the port.
+  let source = random;
+  const sandbox = makeSandbox(() => source());
   vm.createContext(sandbox);
   vm.runInContext(code, sandbox, { filename: "math-table.html" });
 
   const mt = sandbox.window.__mt;
+  if (mt) mt.__setRandom = (fn) => { source = fn; };
   if (!mt || !Array.isArray(mt.TOPICS)) {
     throw new Error(
       "oracle: window.__mt.TOPICS missing — the tutor's structure changed, " +
