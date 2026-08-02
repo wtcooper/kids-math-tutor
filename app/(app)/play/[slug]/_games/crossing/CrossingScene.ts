@@ -27,8 +27,15 @@ import type { GameBus, GameCommand } from "@/components/game/PhaserGame";
 const W = 1024;
 const H = 576;
 
-/** River rows, top to bottom. The frog crosses from the bottom bank to the top. */
-const ROW_Y = [150, 232, 314, 396];
+/**
+ * River rows **in travel order** — index 0 is the row nearest the starting bank.
+ *
+ * This list used to run top-to-bottom while the frog travels bottom-to-top, so
+ * `frogRow + 1` from the near bank aimed at the row beside the *far* bank and the first
+ * hop crossed the entire river. Ordering the list by travel is what makes "+1" mean
+ * "one row further on".
+ */
+export const ROW_Y = [396, 314, 232, 150];
 const BANK_TOP_Y = 74;
 const BANK_BOTTOM_Y = 492;
 
@@ -65,14 +72,21 @@ interface Stone {
   sinking: boolean;
 }
 
-interface Rule {
-  /** "Only step on multiples of 7" / "…on numbers that divide 56 exactly". */
+export interface Rule {
+  /** "Step 7, 14, 21, 28 in order" — what the crossing actually asks for. */
   label: string;
   /** The short form the banner fades down to. */
   short: string;
   /** The scaffold list — the tutor's own skip-count row, or the factor list. */
   members: number[];
-  ok(n: number): boolean;
+  /**
+   * The value each row wants, in travel order. One per river row.
+   *
+   * Requiring the *next* one rather than any one is what stops the game being solvable by
+   * pattern-matching: multiples of 5 all end in 0 or 5, so "is it a multiple" can be
+   * answered without ever multiplying. "What comes after 35 in the fives" cannot.
+   */
+  sequence: number[];
   base: number;
   target?: number;
 }
@@ -82,33 +96,58 @@ export interface CrossingConfig {
   level: number;
 }
 
-function makeRule(kind: FactKind, level: number, rnd: (a: number, b: number) => number): Rule {
+export function makeRule(
+  kind: FactKind,
+  level: number,
+  rnd: (a: number, b: number) => number,
+): Rule {
   const pool = fams(level);
   const f = pool[rnd(0, pool.length - 1)];
 
+  const rows = ROW_Y.length;
+
   if (kind === "mul") {
     const members: number[] = [];
-    for (let k = 2; k <= 12; k++) members.push(f * k);
+    for (let k = 1; k <= 12; k++) members.push(f * k);
+    // Start anywhere in the table that leaves room for the whole crossing.
+    const start = rnd(1, 12 - rows);
+    const sequence = Array.from({ length: rows }, (_, i) => f * (start + i));
     return {
-      label: `Only step on multiples of ${f}`,
-      short: `× ${f}`,
+      label: `Step the ${f}s in order: ${sequence.join(", ")}`,
+      short: `× ${f}, in order`,
       members,
+      sequence,
       base: f,
-      ok: (n) => n % f === 0,
     };
   }
 
   // Division facts asked the way they are actually used: does this number go into it?
-  const k = rnd(4, 12);
-  const target = f * k;
-  const members = factorsOf(target).filter((n) => n >= 2 && n <= 99);
+  // Crossing means listing the factors in order, smallest first — a real skill, and one
+  // you cannot fake by recognising a shape of number.
+  // Room for the crossing *and* some spare factors to act as decoys. 81 has exactly four
+  // factors above 1, so a four-row crossing would use every one and leave nothing on the
+  // river to tempt her — the rule would be back to pure recognition.
+  const need = rows + 2;
+  let target = f * rnd(4, 12);
+  let members = factorsOf(target).filter((n) => n >= 2 && n <= 99);
+  let guard = 0;
+  while (members.length < need && guard++ < 60) {
+    target = f * rnd(4, 12);
+    members = factorsOf(target).filter((n) => n >= 2 && n <= 99);
+  }
+  if (members.length < need) {
+    target = f * 12;
+    members = factorsOf(target).filter((n) => n >= 2 && n <= 99);
+  }
+  const from = rnd(0, members.length - rows);
+  const sequence = members.slice(from, from + rows);
   return {
-    label: `Only step on numbers that divide ${target} exactly`,
-    short: `→ ${target}`,
+    label: `Step the numbers that divide ${target}, in order: ${sequence.join(", ")}`,
+    short: `→ ${target}, in order`,
     members,
+    sequence,
     base: f,
     target,
-    ok: (n) => n >= 2 && target % n === 0,
   };
 }
 
@@ -247,6 +286,8 @@ export function createCrossingScene(P: typeof Phaser, config: CrossingConfig) {
       this.landed = false;
       this.frog.setPosition(this.frogX, BANK_BOTTOM_Y);
       this.askedAt = this.time.now;
+      this.renderBanner();
+      this.pushState();
     }
 
     /**
@@ -269,24 +310,27 @@ export function createCrossingScene(P: typeof Phaser, config: CrossingConfig) {
       return stones;
     }
 
-    private pickValue(ok: boolean): number {
-      if (ok) {
-        const m = this.rule.members;
-        return m[this.rnd(0, m.length - 1)];
+    private pickValue(ok: boolean, row: number): number {
+      if (ok) return this.rule.sequence[row];
+      // The best distractors are the *other* members: 21 really is a multiple of 7, it is
+      // just not the one that comes next. Recognising the rule is no longer enough.
+      if (Math.random() < 0.55) {
+        const others = this.rule.members.filter((n) => n !== this.rule.sequence[row]);
+        if (others.length) return others[this.rnd(0, others.length - 1)];
       }
       // A near miss is the useful distractor — one away from a real multiple, so she has
       // to actually check rather than pattern-match on the shape of the number.
       for (let guard = 0; guard < 40; guard++) {
         const m = this.rule.members[this.rnd(0, this.rule.members.length - 1)];
         const n = m + (Math.random() < 0.5 ? -1 : 1) * this.rnd(1, 3);
-        if (n >= 2 && n <= 99 && !this.rule.ok(n)) return n;
+        if (n >= 2 && n <= 99 && n !== this.rule.sequence[row]) return n;
       }
       return 97;
     }
 
     private makeStone(row: number, x: number, ok: boolean): Stone {
-      const value = this.pickValue(ok);
-      const realOk = this.rule.ok(value);
+      const value = this.pickValue(ok, row);
+      const realOk = value === this.rule.sequence[row];
       const container = this.add.container(x, ROW_Y[row]);
       const bg = this.add.graphics();
       bg.fillStyle(PAPER, 1);
@@ -305,18 +349,40 @@ export function createCrossingScene(P: typeof Phaser, config: CrossingConfig) {
     }
 
     private renderBanner() {
-      this.banner.setText(
-        this.crossings < FADE_HINT ? this.rule.label : this.rule.short,
-      );
+      this.banner.setText(this.crossings < FADE_HINT ? this.rule.label : this.rule.short);
+      // The ladder shows what she has stepped and what is still ahead, so the sequence is
+      // visible rather than remembered. It fades as the crossings add up.
+      const done = Math.max(0, this.frogRow + 1);
+      const ladder = this.rule.sequence
+        .map((v, i) => (i < done ? String(v) : i === done ? `[${v}]` : "?"))
+        .join("   ");
       if (this.crossings < FADE_LIST) {
-        this.strip.setText(this.rule.members.slice(0, 12).join("   "));
+        this.strip.setText(ladder);
         this.strip.setAlpha(1);
       } else if (this.crossings < FADE_HINT) {
-        this.strip.setText(`${this.rule.members.slice(0, 4).join("   ")}   …`);
+        this.strip.setText(ladder);
         this.strip.setAlpha(0.6);
       } else {
         this.strip.setText("");
       }
+    }
+
+    /** What the panel beside the board needs to narrate the crossing. */
+    private pushState() {
+      const step = Math.max(0, this.frogRow + 1);
+      this.bus.emit({
+        type: "state",
+        payload: {
+          kind: config.kind,
+          base: this.rule.base,
+          target: this.rule.target ?? null,
+          sequence: this.rule.sequence,
+          step: Math.min(step, this.rule.sequence.length - 1),
+          onBank: this.frogRow < 0,
+          crossings: this.crossings,
+          done: this.frogRow >= ROW_Y.length,
+        },
+      });
     }
 
     /* ----------------------------------------------------------- movement */
@@ -421,6 +487,7 @@ export function createCrossingScene(P: typeof Phaser, config: CrossingConfig) {
           rule: this.rule.short,
           base: this.rule.base,
           target: this.rule.target,
+          wanted: this.rule.sequence[stone.row],
         },
         response: { value: stone.value, ok: stone.ok },
         elapsedMs: Math.max(0, Math.round(this.time.now - this.askedAt)),
@@ -435,6 +502,8 @@ export function createCrossingScene(P: typeof Phaser, config: CrossingConfig) {
       this.frogRow = stone.row;
       this.frogStone = stone;
       this.frogX = stone.container.x;
+      this.renderBanner();
+      this.pushState();
       stone.bg.setAlpha(1);
       this.tweens.add({
         targets: stone.container,
@@ -460,6 +529,8 @@ export function createCrossingScene(P: typeof Phaser, config: CrossingConfig) {
           this.frogRow = -1;
           this.frogX = W / 2;
           this.frog.setPosition(this.frogX, BANK_BOTTOM_Y);
+          this.renderBanner();
+          this.pushState();
         },
       });
     }

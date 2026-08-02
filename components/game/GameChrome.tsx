@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { tutorHref } from "@/lib/topics";
 import { HowToPlay, type HowTo } from "./HowToPlay";
+import { WorkingsPanel, type Workings } from "./Workings";
 import styles from "./GameChrome.module.css";
 
 /**
@@ -27,6 +28,8 @@ export function GameChrome({
   concept,
   howTo,
   status,
+  workings,
+  workingsKey,
   children,
 }: {
   slug: string;
@@ -42,6 +45,10 @@ export function GameChrome({
   howTo: HowTo;
   /** Live state — score, what's left, whose turn. Rendered beside the instructions. */
   status?: React.ReactNode;
+  /** The tutor's voice for this board: what to do now, the arithmetic, a hint. */
+  workings?: Workings;
+  /** Changes when a new problem starts, so a revealed hint does not carry over. */
+  workingsKey?: unknown;
   children: React.ReactNode;
 }) {
   return (
@@ -84,7 +91,12 @@ export function GameChrome({
 
       {status ? <div className={styles.status}>{status}</div> : null}
 
-      <div className={styles.stage}>{children}</div>
+      {/* The board and the tutor's voice, side by side. The panel wraps underneath on a
+          narrow screen rather than squeezing the board. */}
+      <div className={styles.play}>
+        <div className={styles.stage}>{children}</div>
+        {workings ? <WorkingsPanel workings={workings} resetKey={workingsKey} /> : null}
+      </div>
 
       {/* CSS-only. A JS orientation lock needs fullscreen and is unavailable on iOS. */}
       <div className={styles.rotate}>

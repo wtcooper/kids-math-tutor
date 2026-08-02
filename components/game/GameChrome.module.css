@@ -84,8 +84,18 @@
   color: var(--ink2);
 }
 
+/* Board plus workings panel. */
+.play {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
 .stage {
   position: relative;
+  flex: 1 1 560px;
+  min-width: 0;
 }
 
 .rotate {

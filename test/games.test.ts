@@ -89,6 +89,10 @@ import {
   perimeter,
   volume,
 } from "../app/(app)/play/[slug]/_games/build/build-model";
+import {
+  makeRule as makeCrossingRule,
+  ROW_Y,
+} from "../app/(app)/play/[slug]/_games/crossing/CrossingScene";
 
 const LEVELS = [1, 2, 3, 4];
 const SEEDS = 300;
@@ -774,5 +778,58 @@ describe("Build World", () => {
     };
     expect(check(scaleJob, box(6, 9, 1)).met).toBe(true);
     expect(check(scaleJob, box(6, 8, 1)).met).toBe(false);
+  });
+});
+
+describe("Crossing", () => {
+  /**
+   * These assert the *intent*, not the implementation. The previous browser check
+   * computed the target row with the same `frogRow + 1` expression the scene used, so it
+   * agreed with a bug that sent the frog across the whole river in one hop.
+   */
+  it("rows are ordered by travel, so one hop advances exactly one row", () => {
+    // The frog starts at the bottom bank and finishes at the top, so row 0 must be the
+    // LOWEST on screen (largest y) and each following row must be higher up.
+    for (let i = 1; i < ROW_Y.length; i++) {
+      expect(ROW_Y[i], `row ${i} is not further along than row ${i - 1}`).toBeLessThan(
+        ROW_Y[i - 1],
+      );
+    }
+  });
+
+  it("the crossing needs one correct stone per row, in order", () => {
+    for (const kind of ["mul", "div"] as const) {
+      for (let level = 1; level <= 5; level++) {
+        for (let s = 0; s < 120; s++) {
+          const rand = mulberry32(28000 + s);
+          const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+          const rule = makeCrossingRule(kind, level, rnd);
+          expect(rule.sequence.length, `${rule.label}`).toBe(ROW_Y.length);
+          // Ascending, so "the next one" is always well defined.
+          for (let i = 1; i < rule.sequence.length; i++) {
+            expect(rule.sequence[i], rule.label).toBeGreaterThan(rule.sequence[i - 1]);
+          }
+          // Every wanted value really satisfies the underlying rule.
+          for (const v of rule.sequence) {
+            if (kind === "mul") expect(v % rule.base, rule.label).toBe(0);
+            else expect((rule.target ?? 0) % v, rule.label).toBe(0);
+          }
+        }
+      }
+    }
+  });
+
+  it("offers decoys that satisfy the rule but are the wrong step", () => {
+    // This is what stops the game being winnable by pattern-matching: knowing "it is a
+    // multiple of 5" is not enough when 35 is on the river and you need 20.
+    for (const kind of ["mul", "div"] as const) {
+      for (let s = 0; s < 120; s++) {
+        const rand = mulberry32(29000 + s);
+        const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+        const rule = makeCrossingRule(kind, 3, rnd);
+        const decoys = rule.members.filter((m) => !rule.sequence.includes(m));
+        expect(decoys.length, `${rule.label} has no decoys`).toBeGreaterThan(0);
+      }
+    }
   });
 });

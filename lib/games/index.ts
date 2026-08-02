@@ -66,9 +66,9 @@ export const GAMES: readonly GameMeta[] = [
     name: "Crossing",
     topicId: "facts-mul",
     blurb:
-      "Hop the river on drifting stones. Only the multiples hold your weight — the rest sink.",
+      "Hop the river by stepping the times table in order. Other multiples are there to tempt you.",
     concept:
-      "Multiples. 56 is 7 × 8, so it is a multiple of 7 — every stone is that decision, made again.",
+      "Skip counting through a times table in order — 3, 6, 9, 12. Knowing a number is a multiple is not enough; you need the one that comes next.",
     focus: "fluency",
     variant: "mul",
   },
@@ -78,9 +78,9 @@ export const GAMES: readonly GameMeta[] = [
     name: "Crossing — division",
     topicId: "facts-div",
     blurb:
-      "Same river, other question: a stone holds you only if its number divides the target exactly.",
+      "Same river, other question: step the factors of the target in order, smallest first.",
     concept:
-      "Division facts asked the way you actually use them: does 7 go into 56 exactly?",
+      "Listing what divides a number, smallest first — the question behind every division fact: does this go in exactly?",
     focus: "fluency",
     variant: "div",
   },
