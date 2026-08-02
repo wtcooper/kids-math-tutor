@@ -38,10 +38,15 @@ echo "Staging a git-free copy in $STAGING"
 # .vercel MUST come across or the deploy is unlinked and silently creates a new
 # project. node_modules and .next are rebuilt remotely; excluding them is purely
 # for speed.
+# _archive holds snapshots of superseded code, including copies of .env.local.
+# .gitignore does not help here — rsync doesn't read it — and the .env* strip
+# below is -maxdepth 1, so it would never reach a nested copy.
 rsync -a \
   --exclude '.git' \
   --exclude 'node_modules' \
   --exclude '.next' \
+  --exclude '_archive' \
+  --exclude '.playwright-mcp' \
   --exclude 'test-results' \
   --exclude 'playwright-report' \
   --exclude '**/.venv' \
