@@ -39,7 +39,7 @@ const HOW_TO: HowTo = {
   ],
 };
 
-export default function Bakery({ slug, topicId, name, levels, initialLevel, seed }: GameProps) {
+export default function Bakery({ slug, topicId, name, concept, levels, initialLevel, seed }: GameProps) {
   const [level, setLevel] = useState(initialLevel);
   const [nonce, setNonce] = useState(0);
   const [units, setUnits] = useState<Units>("us");
@@ -99,6 +99,7 @@ export default function Bakery({ slug, topicId, name, levels, initialLevel, seed
   return (
     <GameChrome
       slug={slug}
+      concept={concept}
       title={name}
       topicId={topicId}
       levels={levels}

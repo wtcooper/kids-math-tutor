@@ -45,7 +45,7 @@ const HOW_TO: HowTo = {
 const BAR_W = 640;
 const BAR_H = 58;
 
-export default function Cut({ slug, topicId, name, levels, initialLevel, seed }: GameProps) {
+export default function Cut({ slug, topicId, name, concept, levels, initialLevel, seed }: GameProps) {
   const [level, setLevel] = useState(initialLevel);
   const [nonce, setNonce] = useState(0);
   const recorder = useAttemptRecorder({ gameSlug: slug, level });
@@ -117,6 +117,7 @@ export default function Cut({ slug, topicId, name, levels, initialLevel, seed }:
   return (
     <GameChrome
       slug={slug}
+      concept={concept}
       title={name}
       topicId={topicId}
       levels={levels}

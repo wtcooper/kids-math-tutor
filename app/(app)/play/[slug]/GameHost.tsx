@@ -60,6 +60,8 @@ export interface GameProps {
   slug: string;
   topicId: string;
   name: string;
+  /** The maths, named. Straight from the registry. */
+  concept: string;
   variant: string;
   levels: readonly string[];
   initialLevel: number;

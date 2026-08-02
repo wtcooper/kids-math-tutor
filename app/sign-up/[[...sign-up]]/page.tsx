@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { pageTitle } from "@/lib/app";
 import { SignUp } from "@clerk/nextjs";
 
 export const metadata: Metadata = {
-  title: "Sign up — The Math Table",
+  title: pageTitle("Sign up"),
   robots: { index: false },
 };
 

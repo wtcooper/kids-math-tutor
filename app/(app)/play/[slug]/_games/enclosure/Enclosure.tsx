@@ -48,7 +48,7 @@ interface Result {
 export default function Enclosure({
   slug,
   topicId,
-  name,
+  name, concept,
   levels,
   initialLevel,
 }: GameProps) {
@@ -103,6 +103,7 @@ export default function Enclosure({
   return (
     <GameChrome
       slug={slug}
+      concept={concept}
       title={name}
       topicId={topicId}
       levels={levels}

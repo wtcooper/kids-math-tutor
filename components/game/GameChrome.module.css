@@ -107,3 +107,24 @@
     margin: 0;
   }
 }
+
+.concept {
+  margin: 8px 0 0;
+  color: var(--ink2);
+  font-size: 0.84rem;
+  line-height: 1.5;
+  max-width: 62ch;
+  background: var(--paper2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+.conceptLabel {
+  display: block;
+  font-size: 0.64rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  font-weight: 600;
+  margin-bottom: 3px;
+}

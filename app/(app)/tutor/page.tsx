@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { requireAllowedPerson } from "@/lib/auth/person";
 import { TutorApp } from "@/components/tutor/TutorApp";
+import { pageTitle } from "@/lib/app";
 
 export const metadata: Metadata = {
   // No grade label: the original's tab title was "The Math Table — Grades 4–6", the one
   // place the no-grade-labels rule was being broken.
-  title: "The Math Tutor",
+  title: pageTitle("The Math Tutor"),
 };
 
 interface Props {

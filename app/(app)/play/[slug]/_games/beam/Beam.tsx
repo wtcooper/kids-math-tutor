@@ -33,7 +33,7 @@ const HOW_TO: HowTo = {
 
 const BEAM_W = 620;
 
-export default function Beam({ slug, topicId, name, levels, initialLevel, seed }: GameProps) {
+export default function Beam({ slug, topicId, name, concept, levels, initialLevel, seed }: GameProps) {
   const [level, setLevel] = useState(initialLevel);
   const [nonce, setNonce] = useState(0);
   const recorder = useAttemptRecorder({ gameSlug: slug, level });
@@ -118,6 +118,7 @@ export default function Beam({ slug, topicId, name, levels, initialLevel, seed }
   return (
     <GameChrome
       slug={slug}
+      concept={concept}
       title={name}
       topicId={topicId}
       levels={levels}

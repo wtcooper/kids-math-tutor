@@ -56,7 +56,7 @@ function Pan({ side, label }: { side: Side; label: string }) {
   );
 }
 
-export default function Balance({ slug, topicId, name, levels, initialLevel, seed }: GameProps) {
+export default function Balance({ slug, topicId, name, concept, levels, initialLevel, seed }: GameProps) {
   const [level, setLevel] = useState(initialLevel);
   const [nonce, setNonce] = useState(0);
   const recorder = useAttemptRecorder({ gameSlug: slug, level });
@@ -130,6 +130,7 @@ export default function Balance({ slug, topicId, name, levels, initialLevel, see
   return (
     <GameChrome
       slug={slug}
+      concept={concept}
       title={name}
       topicId={topicId}
       levels={levels}

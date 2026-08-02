@@ -27,7 +27,17 @@ function seenKey(slug: string) {
   return `mathtable:howto:${slug}`;
 }
 
-export function HowToPlay({ slug, title, howTo }: { slug: string; title: string; howTo: HowTo }) {
+export function HowToPlay({
+  slug,
+  title,
+  concept,
+  howTo,
+}: {
+  slug: string;
+  title: string;
+  concept: string;
+  howTo: HowTo;
+}) {
   const [open, setOpen] = useState(false);
 
   // In an effect, not in useState: localStorage does not exist during the server render,
@@ -61,6 +71,9 @@ export function HowToPlay({ slug, title, howTo }: { slug: string; title: string;
           <div className={styles.card}>
             <h2 className={styles.title}>{title}</h2>
             <p className={styles.goal}>{howTo.goal}</p>
+
+            <h3 className={styles.h3}>What you are practising</h3>
+            <p className={styles.concept}>{concept}</p>
 
             <h3 className={styles.h3}>How to move</h3>
             <ul className={styles.list}>

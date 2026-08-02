@@ -114,7 +114,7 @@ function Blocks3D({
 export default function BuildWorld({
   slug,
   topicId,
-  name,
+  name, concept,
   levels,
   initialLevel,
   seed,
@@ -187,6 +187,7 @@ export default function BuildWorld({
   return (
     <GameChrome
       slug={slug}
+      concept={concept}
       title={name}
       topicId={topicId}
       levels={levels}

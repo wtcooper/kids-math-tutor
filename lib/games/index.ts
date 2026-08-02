@@ -34,6 +34,14 @@ export interface GameMeta {
   /** What the mechanic actually is, not what it drills. */
   blurb: string;
   /**
+   * The maths, named. Shown on the card and in the how-to.
+   *
+   * A blurb that only describes the mechanic ("cover a rectangle with tiles") reads as a
+   * shape puzzle, and a kid has no way to know what they are practising. Every game says
+   * its concept in a sentence, in the notation they will meet it in.
+   */
+  concept: string;
+  /**
    * Which half of the open question in plan 02 this one serves. Shown as a chip so the
    * difference between "get faster" and "see why" is visible before she commits.
    */
@@ -59,6 +67,8 @@ export const GAMES: readonly GameMeta[] = [
     topicId: "facts-mul",
     blurb:
       "Hop the river on drifting stones. Only the multiples hold your weight — the rest sink.",
+    concept:
+      "Multiples. 56 is 7 × 8, so it is a multiple of 7 — every stone is that decision, made again.",
     focus: "fluency",
     variant: "mul",
   },
@@ -69,6 +79,8 @@ export const GAMES: readonly GameMeta[] = [
     topicId: "facts-div",
     blurb:
       "Same river, other question: a stone holds you only if its number divides the target exactly.",
+    concept:
+      "Division facts asked the way you actually use them: does 7 go into 56 exactly?",
     focus: "fluency",
     variant: "div",
   },
@@ -78,6 +90,8 @@ export const GAMES: readonly GameMeta[] = [
     name: "Munchers",
     topicId: "factors",
     blurb: "Move around the grid and eat only the numbers that fit the rule.",
+    concept:
+      "Factors, multiples, primes, and the greatest common factor of two numbers.",
     focus: "fluency",
   },
   {
@@ -87,6 +101,8 @@ export const GAMES: readonly GameMeta[] = [
     topicId: "factors",
     blurb:
       "Shoot a rock and it breaks into two factors. Primes will not break — so you have to fly around what you made.",
+    concept:
+      "Prime factorization. 36 → 4 × 9 → 2 × 2 × 3 × 3 — a factor tree, one split at a time.",
     focus: "understanding",
   },
   {
@@ -96,6 +112,8 @@ export const GAMES: readonly GameMeta[] = [
     topicId: "geometry",
     blurb:
       "Walk a fence around exactly the area asked for. The fence you spend is the perimeter.",
+    concept:
+      "Area against perimeter: the squares inside versus the distance around, and why 12 squares can cost 14 fence or 26.",
     focus: "understanding",
     levelNames: [
       "Small fields",
@@ -111,6 +129,8 @@ export const GAMES: readonly GameMeta[] = [
     topicId: "mul",
     blurb:
       "Cover a rectangle with hundreds, strips and squares. The pile you use is the partial products.",
+    concept:
+      "The distributive property. 23 × 14 = (20 + 3) × (10 + 4) = 200 + 80 + 30 + 12 — you work out each part yourself.",
     focus: "understanding",
     levelNames: [
       "Teens × teens",
@@ -126,6 +146,8 @@ export const GAMES: readonly GameMeta[] = [
     topicId: "frac-equiv",
     blurb:
       "Slice a brick until the pieces fill the gap exactly. Same width of wall, different name.",
+    concept:
+      "Equivalent fractions and simplifying: 3/4 = 6/8 = 9/12, all the same width of wall.",
     focus: "understanding",
     levelNames: ["Halves & quarters", "Sixths & eighths", "Twelfths", "Sixteenths & more"],
   },
@@ -136,6 +158,8 @@ export const GAMES: readonly GameMeta[] = [
     topicId: "frac-addsub",
     blurb:
       "One beam, several machines. Only one splitter setting can pay them all in whole strands.",
+    concept:
+      "Adding fractions with different denominators — 1/4 + 2/3 needs twelfths before it can be added at all.",
     focus: "understanding",
     levelNames: ["Two machines", "Trickier pairs", "Awkward pairs", "Three machines"],
   },
@@ -146,6 +170,8 @@ export const GAMES: readonly GameMeta[] = [
     topicId: "equations",
     blurb:
       "Take the same thing off both pans until one bag stands alone. Whatever balances it is x.",
+    concept:
+      "Solving equations: 4x + 5 = 3x + 13, by doing the same thing to both sides until x is alone.",
     focus: "understanding",
     levelNames: ["x + a = b", "n bags", "n bags and stones", "Bags on both sides"],
   },
@@ -156,6 +182,8 @@ export const GAMES: readonly GameMeta[] = [
     topicId: "pemdas",
     blurb:
       "Fit operators into a machine until the outlet reads the order slip. The wiring is the precedence.",
+    concept:
+      "Order of operations, then variables — an expression that has to give the right answer for every n, not just one.",
     focus: "understanding",
     levelNames: [
       "One operator",
@@ -171,6 +199,8 @@ export const GAMES: readonly GameMeta[] = [
     topicId: "percent",
     blurb:
       "Buy flour, bake, set a price. Nothing is marked right — the till just tells you how the day went.",
+    concept:
+      "Unit rates (price per pound), percent markup, and percent off.",
     focus: "understanding",
     levelNames: ["Two sacks", "More markups", "Three sacks", "Tight margins"],
   },
@@ -181,6 +211,8 @@ export const GAMES: readonly GameMeta[] = [
     topicId: "geometry",
     blurb:
       "Build the commission — an exact floor, an exact number of blocks, or a plan scaled up.",
+    concept:
+      "Area, volume and scale: floor area, blocks in a box, and a plan enlarged by a ratio.",
     focus: "understanding",
     levelNames: ["Floors", "Silos", "Anything goes", "Tight commissions"],
   },

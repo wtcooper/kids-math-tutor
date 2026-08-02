@@ -36,7 +36,7 @@ interface Live {
 export default function Munchers({
   slug,
   topicId,
-  name,
+  name, concept,
   levels,
   initialLevel,
 }: GameProps) {
@@ -85,6 +85,7 @@ export default function Munchers({
   return (
     <GameChrome
       slug={slug}
+      concept={concept}
       title={name}
       topicId={topicId}
       levels={levels}

@@ -24,6 +24,7 @@ export function GameChrome({
   level,
   onLevel,
   instructions,
+  concept,
   howTo,
   status,
   children,
@@ -36,6 +37,8 @@ export function GameChrome({
   onLevel: (level: number) => void;
   /** The one-line reminder that stays on screen the whole time. */
   instructions: string;
+  /** The maths, named — repeated here so it is on screen during play, not only on the card. */
+  concept: string;
   howTo: HowTo;
   /** Live state — score, what's left, whose turn. Rendered beside the instructions. */
   status?: React.ReactNode;
@@ -50,9 +53,13 @@ export function GameChrome({
           </Link>
           <h1 className={styles.title}>{title}</h1>
           <p className={styles.instructions}>{instructions}</p>
+          <p className={styles.concept}>
+            <span className={styles.conceptLabel}>The maths</span>
+            {concept}
+          </p>
         </div>
         <div className={styles.headActions}>
-          <HowToPlay slug={slug} title={title} howTo={howTo} />
+          <HowToPlay slug={slug} title={title} concept={concept} howTo={howTo} />
           <Link className="btn sm" href={tutorHref(topicId, { level })}>
             Open in the tutor
           </Link>

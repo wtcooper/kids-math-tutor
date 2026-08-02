@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { APP_NAME, pageTitle } from "@/lib/app";
 
 export const metadata: Metadata = {
-  title: "Not on the list — The Math Table",
+  title: pageTitle("Not on the list"),
   robots: { index: false },
 };
 
@@ -16,7 +17,7 @@ export default function NoAccessPage() {
       <div className="card" style={{ maxWidth: "44ch", textAlign: "center" }}>
         <h1 style={{ fontSize: "1.3rem", marginBottom: 10 }}>This one is private</h1>
         <p style={{ color: "var(--ink2)", fontSize: "0.95rem", margin: "0 0 18px" }}>
-          You are signed in, but this account is not set up for The Math Table. If that
+          You are signed in, but this account is not set up for {APP_NAME}. If that
           seems wrong, ask Wade to add you.
         </p>
         <a className="btn" href="/sign-out">

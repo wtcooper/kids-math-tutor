@@ -41,7 +41,7 @@ const HOW_TO_DIV: HowTo = {
 export default function Crossing({
   slug,
   topicId,
-  name,
+  name, concept,
   variant,
   levels,
   initialLevel,
@@ -99,6 +99,7 @@ export default function Crossing({
   return (
     <GameChrome
       slug={slug}
+      concept={concept}
       title={name}
       topicId={topicId}
       levels={levels}

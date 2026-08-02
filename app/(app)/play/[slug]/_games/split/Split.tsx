@@ -58,7 +58,7 @@ function factorString(n: number): string {
 export default function Split({
   slug,
   topicId,
-  name,
+  name, concept,
   levels,
   initialLevel,
 }: GameProps) {
@@ -107,6 +107,7 @@ export default function Split({
   return (
     <GameChrome
       slug={slug}
+      concept={concept}
       title={name}
       topicId={topicId}
       levels={levels}

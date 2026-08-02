@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireAllowedPerson } from "@/lib/auth/person";
 import { BY_ID } from "@/lib/topics";
 import { GAME_BY_SLUG } from "@/lib/games";
+import { pageTitle } from "@/lib/app";
 import { GameHost } from "./GameHost";
 
 interface Props {
@@ -13,7 +14,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const game = GAME_BY_SLUG[slug];
-  return { title: game ? `${game.name} — The Math Table` : "The Math Table" };
+  return { title: game ? pageTitle(game.name) : pageTitle() };
 }
 
 export default async function PlayPage({ params, searchParams }: Props) {
@@ -38,6 +39,7 @@ export default async function PlayPage({ params, searchParams }: Props) {
       impl={game.impl}
       slug={game.slug}
       name={game.name}
+      concept={game.concept}
       variant={game.variant ?? ""}
       topicId={game.topicId}
       levels={levels}
