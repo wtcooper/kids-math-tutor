@@ -8,6 +8,7 @@ import { runtimeFor } from "@/lib/math/registry";
 import type { FactKind } from "@/lib/math/facts";
 import { PracticeMode } from "./PracticeMode";
 import { DrillMode, LearnMode } from "./FlashcardMode";
+import { StepsWorkspace } from "./StepsWorkspace";
 import styles from "./TutorShell.module.css";
 
 /**
@@ -18,7 +19,7 @@ import styles from "./TutorShell.module.css";
  * no injected bootstrap script.
  */
 
-type Mode = "learn" | "drill" | "practice";
+type Mode = "learn" | "drill" | "picture" | "watch" | "try" | "practice";
 
 export function TutorShell({
   topic,
@@ -39,12 +40,21 @@ export function TutorShell({
   const isFacts = topic.engine === "facts";
   const kind: FactKind = topic.id === "facts-div" ? "div" : "mul";
 
+  // Picture it is per-problem, not per-topic: a topic whose current problem has no
+  // picture simply does not show the tab, exactly as the original decided it.
   const modes: [Mode, string][] = isFacts
     ? [
         ["learn", "Learn"],
         ["drill", "Drill"],
       ]
-    : [["practice", "Practice"]];
+    : runtime?.build
+      ? [
+          ["picture", "Picture it"],
+          ["watch", "Watch it"],
+          ["try", "You try"],
+          ["practice", "Practice"],
+        ]
+      : [["practice", "Practice"]];
 
   const go = useCallback(
     (next: { level?: number; mode?: Mode }) => {
@@ -132,6 +142,13 @@ export function TutorShell({
           ) : (
             <LearnMode key={`${kind}-${level}`} kind={kind} level={level} />
           )
+        ) : runtime && runtime.build && mode !== "practice" ? (
+          <StepsWorkspace
+            key={`${topic.id}-${level}-${mode}`}
+            runtime={runtime}
+            level={level}
+            mode={mode as "picture" | "watch" | "try"}
+          />
         ) : runtime ? (
           <PracticeMode key={`${topic.id}-${level}`} runtime={runtime} level={level} />
         ) : (

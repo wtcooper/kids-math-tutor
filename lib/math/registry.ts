@@ -10,6 +10,9 @@
  */
 
 import type { Rng } from "./rng";
+import type { StepsModel } from "./types";
+import { buildFactors } from "./topics/factors";
+import { buildExponents, buildPemdas, buildPlace } from "./builds/whole-numbers";
 import { BY_ID, type Topic } from "@/lib/topics";
 
 import { addAnswer, addHint, addTitle, genAdd, genSub, subAnswer, subHint, subTitle } from "./topics/add-sub";
@@ -83,6 +86,11 @@ export interface TopicRuntime<P = unknown> {
   /** The answer, written the way the tutor writes it. */
   answer(p: P): string;
   hint?(p: P): string;
+  /**
+   * The step-by-step model behind Watch it / You try / Picture it. Absent while a topic
+   * is still being ported, in which case the tutor shows Practice only.
+   */
+  build?(p: P): StepsModel;
 }
 
 const num = (s: string): number => Number(String(s).replace(/,/g, "").trim());
@@ -151,6 +159,7 @@ const R: Record<string, TopicRuntime<any>> = {
     fields: one(),
     check: (p, v) => num(v.q) === placeAnswer(p),
     answer: (p) => fmt(placeAnswer(p)),
+    build: buildPlace,
   },
   factors: {
     id: "factors",
@@ -162,6 +171,7 @@ const R: Record<string, TopicRuntime<any>> = {
     ],
     check: (p, v) => num(v.g) === gcd(p.a, p.b) && num(v.l) === lcm(p.a, p.b),
     answer: (p) => `GCF ${gcd(p.a, p.b)}, LCM ${lcm(p.a, p.b)}`,
+    build: buildFactors,
   },
   pemdas: {
     id: "pemdas",
@@ -170,6 +180,7 @@ const R: Record<string, TopicRuntime<any>> = {
     fields: one(),
     check: (p, v) => num(v.q) === pemdasAnswer(p),
     answer: (p) => fmt(pemdasAnswer(p)),
+    build: buildPemdas,
   },
   exponents: {
     id: "exponents",
@@ -178,6 +189,7 @@ const R: Record<string, TopicRuntime<any>> = {
     fields: one(),
     check: (p, v) => rd(num(v.q), 6) === rd(exponentAnswer(p), 6),
     answer: (p) => fmt(exponentAnswer(p)),
+    build: buildExponents,
   },
   "frac-equiv": {
     id: "frac-equiv",

@@ -1,0 +1,44 @@
+.lead { margin-bottom:6px }
+.picTitle { font-size:1.1rem; margin-bottom:4px }
+.picSub { color:var(--ink2); font-size:.9rem; margin:0 0 14px; max-width:62ch }
+
+.progress { height:4px; background:var(--line); border-radius:999px; overflow:hidden;
+  margin:14px 0 18px }
+.progress i { display:block; height:100%; background:var(--sage); transition:width .25s }
+
+.stepBox { border:1px solid var(--line); border-radius:14px; padding:16px 18px;
+  background:var(--paper2) }
+.stepLabel { display:flex; align-items:center; gap:9px; font-weight:600;
+  font-size:.98rem; color:var(--ink) }
+.stepNum { display:grid; place-items:center; width:22px; height:22px; flex:none;
+  border-radius:50%; background:var(--clay-s); color:var(--clay-d);
+  font-size:.76rem; font-weight:700 }
+.stepNum.done { background:var(--sage-s); color:var(--sage-d) }
+
+.work { margin:8px 0 2px }
+.say { margin:8px 0 0; color:var(--ink2); font-size:.92rem; line-height:1.55 }
+.sub { margin:5px 0 0; color:var(--ink3); font-size:.88rem }
+.answer { font-family:var(--mono); font-size:1.5rem; color:var(--sage-d); margin:10px 0 0 }
+
+.controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:16px }
+.counter { font-size:.78rem; color:var(--ink3); margin-left:auto }
+
+.steps { list-style:none; margin:0; padding:0; display:grid; gap:12px }
+.step { border:1px solid var(--line); border-radius:14px; padding:14px 16px;
+  background:var(--paper) }
+.stepDone { background:var(--paper2); opacity:.72 }
+
+.askRow { display:flex; gap:12px; flex-wrap:wrap; margin-top:10px }
+.ask { display:flex; flex-direction:column; gap:3px }
+.askLabel { font-size:.72rem; text-transform:uppercase; letter-spacing:.04em;
+  color:var(--ink3) }
+.askInput { font:inherit; font-family:var(--mono); font-size:1.1rem;
+  padding:.36rem .5rem; border:1px solid var(--line2); border-radius:10px;
+  background:var(--paper); min-width:3.4rem }
+.askInput:focus { outline:2px solid var(--clay-s); border-color:var(--clay) }
+.askInput.ok { border-color:var(--sage); background:var(--sage-s); color:var(--sage-d) }
+/* Amber, not green: a step that was shown must look different from one she earned. */
+.askInput.given { border-color:var(--gold); background:var(--gold-s); color:var(--gold-d) }
+
+.remaining { margin:12px 0 0; font-size:.83rem; color:var(--ink3) }
+.solved { margin:16px 0 0; font-size:.96rem; color:var(--sage-d) }
