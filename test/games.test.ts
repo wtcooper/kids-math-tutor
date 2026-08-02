@@ -39,6 +39,13 @@ import {
   simplify,
   workableDenoms,
 } from "../app/(app)/play/[slug]/_games/cut/cut-model";
+import {
+  genBeam,
+  lcd,
+  settingWorks,
+  strandsFor,
+  totalDemand,
+} from "../app/(app)/play/[slug]/_games/beam/beam-model";
 
 const LEVELS = [1, 2, 3, 4];
 const SEEDS = 300;
@@ -293,6 +300,68 @@ describe("Cut", () => {
         const p = genCut(level, rnd);
         const [, sd] = simplify(p.gap.n, p.gap.d);
         expect(workableDenoms(p.gap, p.reachable)[0], `${p.gap.n}/${p.gap.d}`).toBe(sd);
+      }
+    }
+  });
+});
+
+describe("Split the Beam", () => {
+  it("the LCD always works and every machine's own denominator is offered", () => {
+    for (let level = 1; level <= 4; level++) {
+      for (let s = 0; s < 150; s++) {
+        const rand = mulberry32(12000 + s);
+        const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+        const p = genBeam(level, rnd);
+        const need = lcd(p.demands);
+        expect(settingWorks(p.demands, need), `LCD ${need} fails`).toBe(true);
+        expect(p.settings, `LCD ${need} not offered`).toContain(need);
+        for (const d of p.demands) expect(p.settings).toContain(d.d);
+      }
+    }
+  });
+
+  it("no setting smaller than the LCD can pay everyone", () => {
+    for (let level = 1; level <= 4; level++) {
+      for (let s = 0; s < 150; s++) {
+        const rand = mulberry32(13000 + s);
+        const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+        const p = genBeam(level, rnd);
+        const need = lcd(p.demands);
+        for (let setting = 1; setting < need; setting++) {
+          expect(
+            settingWorks(p.demands, setting),
+            `${p.demands.map((d) => `${d.n}/${d.d}`).join("+")} paid at ${setting}`,
+          ).toBe(false);
+        }
+      }
+    }
+  });
+
+  it("the machines never ask for more beam than exists", () => {
+    for (let level = 1; level <= 4; level++) {
+      for (let s = 0; s < 150; s++) {
+        const rand = mulberry32(14000 + s);
+        const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+        const p = genBeam(level, rnd);
+        const t = totalDemand(p.demands);
+        expect(t.n / t.d, `${p.demands.map((d) => `${d.n}/${d.d}`).join("+")} > 1`).toBeLessThanOrEqual(1);
+        // And the strands at the LCD really do fit.
+        const need = lcd(p.demands);
+        const used = p.demands.reduce((a, d) => a + (strandsFor(d, need) ?? 0), 0);
+        expect(used).toBeLessThanOrEqual(need);
+      }
+    }
+  });
+
+  it("at least one offered setting is a tempting wrong answer", () => {
+    // A machine's own denominator that cannot pay the others is the whole lesson.
+    for (let level = 2; level <= 4; level++) {
+      for (let s = 0; s < 80; s++) {
+        const rand = mulberry32(15000 + s);
+        const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+        const p = genBeam(level, rnd);
+        const wrong = p.settings.filter((x) => !settingWorks(p.demands, x));
+        expect(wrong.length, `${p.demands.map((d) => `${d.n}/${d.d}`).join("+")} has no near miss`).toBeGreaterThan(0);
       }
     }
   });

@@ -17,7 +17,8 @@ export type GameImpl =
   | "split"
   | "enclosure"
   | "tiles"
-  | "cut";
+  | "cut"
+  | "beam";
 
 export interface GameMeta {
   /** Route: /play/<slug>. Stable — it is what her bookmarks point at. */
@@ -123,6 +124,16 @@ export const GAMES: readonly GameMeta[] = [
       "Slice a brick until the pieces fill the gap exactly. Same width of wall, different name.",
     focus: "understanding",
     levelNames: ["Halves & quarters", "Sixths & eighths", "Twelfths", "Sixteenths & more"],
+  },
+  {
+    slug: "beam",
+    impl: "beam",
+    name: "Split the Beam",
+    topicId: "frac-addsub",
+    blurb:
+      "One beam, several machines. Only one splitter setting can pay them all in whole strands.",
+    focus: "understanding",
+    levelNames: ["Two machines", "Trickier pairs", "Awkward pairs", "Three machines"],
   },
 ];
 
