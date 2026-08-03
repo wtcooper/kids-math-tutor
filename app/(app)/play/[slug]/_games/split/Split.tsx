@@ -25,10 +25,10 @@ interface PhaserGameLike {
 const HOW_TO: HowTo = {
   goal: "Break every rock down until only primes are left floating.",
   controls: [
-    "Move your finger or the mouse to slide the ship left and right.",
-    "Tap to shoot straight up — line up under a rock first.",
+    "Move your finger or the mouse and the ship follows underneath.",
+    "Tap or click to shoot straight up from where the ship is.",
     "Then pick the two factors, or type one and the other follows.",
-    "Arrow keys work too: ← → to move, space to shoot.",
+    "Keyboard: hold ← → to fly, space to shoot.",
   ],
   rules: [
     "Shoot a rock and you have to say what it breaks into — two numbers that multiply to make it.",
@@ -202,7 +202,12 @@ export default function Split({
         ) : null
       }
     >
-      <PhaserGame createScenes={createScenes} onEvent={onEvent} busRef={busRef} />
+      <PhaserGame
+        createScenes={createScenes}
+        onEvent={onEvent}
+        busRef={busRef}
+        backgroundColor="#101426"
+      />
 
       {live?.asking ? (
         <div className={styles.askScrim}>

@@ -125,7 +125,12 @@ export default function Munchers({
         ) : null
       }
     >
-      <PhaserGame createScenes={createScenes} onEvent={onEvent} busRef={busRef} />
+      <PhaserGame
+        createScenes={createScenes}
+        onEvent={onEvent}
+        busRef={busRef}
+        backgroundColor="#232019"
+      />
       {result ? (
         <FactorRoundEnd
           topicId={topicId}

@@ -57,7 +57,7 @@ function Ground({ onPlace }: { onPlace: (c: number, r: number) => void }) {
       }}
     >
       <planeGeometry args={[GRID, GRID]} />
-      <meshStandardMaterial color="#e9e2d3" />
+      <meshStandardMaterial color="#E3D3A8" />
     </mesh>
   );
 }
@@ -75,7 +75,7 @@ function GridLines() {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" args={[array, 3]} />
       </bufferGeometry>
-      <lineBasicMaterial color="#cfc4ae" />
+      <lineBasicMaterial color="#C6B283" />
     </lineSegments>
   );
 }
@@ -105,7 +105,7 @@ function Blocks3D({
           }}
         >
           <boxGeometry args={[0.96, 0.96, 0.96]} />
-          <meshStandardMaterial color={y % 2 === 0 ? "#c98a63" : "#d9a077"} />
+          <meshStandardMaterial color={y % 2 === 0 ? "#D98E5F" : "#E8A876"} />
         </mesh>
       ))}
     </>
@@ -275,8 +275,13 @@ export default function BuildWorld({
             camera={{ position: [16, 14, 16], zoom: 34, near: 0.1, far: 200 }}
             dpr={[1, 2]}
           >
-            <ambientLight intensity={0.75} />
-            <directionalLight position={[8, 14, 6]} intensity={1.1} />
+            {/* High-desert light: a pale sky, warm sun from one side, cool fill from the
+                other, so every block has a lit face and a shaded face (plan 06). */}
+            <color attach="background" args={["#BFD9E4"]} />
+            <fog attach="fog" args={["#BFD9E4", 55, 110]} />
+            <ambientLight intensity={0.55} />
+            <directionalLight position={[8, 14, 6]} intensity={1.3} color="#FFF2DC" />
+            <directionalLight position={[-10, 8, -4]} intensity={0.35} color="#9FB8D9" />
             <Ground onPlace={place} />
             <GridLines />
             <Blocks3D blocks={blocks} onBlock={(c, r) => place(c, r)} />

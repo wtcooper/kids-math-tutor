@@ -8,11 +8,28 @@
 .soft { color: var(--ink3); font-size: 0.82rem }
 
 .stage {
+  /* The shop at dawn: awning over the counter, warm timber below (plan 06). */
   position: relative;
-  background: var(--paper);
-  border: 1px solid var(--line);
+  background: linear-gradient(180deg, #fbf3e2 0%, #f7efe2 70%, #efe3cc 100%);
+  border: 1px solid #d9c6a4;
   border-radius: 18px;
-  padding: 22px;
+  padding: 34px 22px 22px;
+  overflow: hidden;
+}
+/* The awning: a scalloped crust-and-cream stripe across the top of the stage. */
+.stage::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 16px;
+  background: repeating-linear-gradient(
+    90deg,
+    #c98544 0 34px,
+    #f7efe2 34px 68px
+  );
+  border-bottom: 2px solid #b0713a;
 }
 .step { margin-bottom: 20px }
 .h3 {
@@ -25,21 +42,40 @@
 
 .offers { display: flex; gap: 10px; flex-wrap: wrap }
 .offer {
+  /* A flour sack: canvas belly, stitched seam, cinched shoulders. */
   appearance: none;
   font: inherit;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  border: 1px solid var(--line);
-  background: transparent;
-  border-radius: 12px;
-  padding: 10px 16px;
+  border: 1.5px solid #c4a476;
+  background:
+    linear-gradient(180deg, #f2e4c4 0%, #e8d6ae 60%, #dcc794 100%);
+  border-radius: 10px 10px 14px 14px / 22px 22px 14px 14px;
+  padding: 14px 16px 10px;
   text-align: left;
   min-width: 120px;
+  position: relative;
+  box-shadow: inset 0 -4px 8px rgba(140, 110, 60, 0.18), 0 3px 6px -2px rgba(120, 90, 40, 0.35);
+  transition: 0.15s;
 }
-.offer:hover:not(:disabled) { border-color: var(--line2) }
-.offer.on { background: var(--clay-s); border-color: #e6c3ae }
+.offer::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 34px;
+  height: 4px;
+  border-radius: 3px;
+  background: #b08d54;
+}
+.offer:hover:not(:disabled) { transform: translateY(-2px) }
+.offer.on {
+  border-color: #ce9430;
+  box-shadow: 0 0 0 3px rgba(206, 148, 48, 0.25), inset 0 -4px 8px rgba(140, 110, 60, 0.18);
+}
 .offer:disabled { opacity: 0.6; cursor: default }
 .offerSize { font-weight: 600; font-size: 1rem }
 .offerPrice { font-family: var(--mono); font-size: 0.9rem; color: var(--ink2) }
@@ -91,11 +127,11 @@
   inset: 0;
   display: grid;
   place-items: center;
-  background: rgba(250, 246, 239, 0.93);
+  background: rgba(69, 51, 32, 0.5);
   border-radius: 18px;
   padding: 16px;
 }
-.panel { max-width: 420px }
+.panel { max-width: 420px; animation: pop 0.22s ease-out }
 .h2 { font-family: Georgia, serif; font-size: 1.45rem; margin: 0 0 14px }
 
 .till { width: 100%; border-collapse: collapse; margin-bottom: 14px }

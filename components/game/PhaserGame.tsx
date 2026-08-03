@@ -69,12 +69,19 @@ export interface PhaserGameProps {
   createScenes: (phaser: typeof Phaser) => Phaser.Types.Scenes.SceneType[];
   onEvent: (e: GameEvent) => void;
   busRef?: React.MutableRefObject<GameBus | null>;
+  /** The world's own color — each game is a lit scene, not a sheet of paper. */
+  backgroundColor?: string;
 }
 
 export const DESIGN_WIDTH = 1024;
 export const DESIGN_HEIGHT = 576;
 
-export function PhaserGame({ createScenes, onEvent, busRef }: PhaserGameProps) {
+export function PhaserGame({
+  createScenes,
+  onEvent,
+  busRef,
+  backgroundColor = "#FAF6EF",
+}: PhaserGameProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
   // Kept in a ref so the effect can stay dependency-free without going stale.
@@ -93,7 +100,7 @@ export function PhaserGame({ createScenes, onEvent, busRef }: PhaserGameProps) {
       const game = new PhaserMod.Game({
         type: PhaserMod.AUTO,
         parent: hostRef.current,
-        backgroundColor: "#FAF6EF",
+        backgroundColor,
         scale: {
           mode: PhaserMod.Scale.FIT,
           autoCenter: PhaserMod.Scale.CENTER_BOTH,

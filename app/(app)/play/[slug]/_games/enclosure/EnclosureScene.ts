@@ -26,11 +26,16 @@ const CELL = 44;
 const GRID_X = (W - COLS * CELL) / 2;
 const GRID_Y = 96;
 
-const PAPER = 0xfffcf7;
-const LINE = 0xe6dccb;
-const INK = "#3D352C";
-const CLAY = 0xbe6e4e;
-const SAGE = 0x6d8e68;
+/** Stage palette — spring meadow (plan 06). */
+const GRASS = 0x5e8c4a;
+const GRASS_MOWN = 0x679455;
+const GRID_LINE = 0x4a7340;
+const TIMBER = 0xc9a36b;
+const TIMBER_DARK = 0x8a6642;
+const POST_RED = 0xc4452f;
+const WHEAT = 0xd9b44a;
+const BANNER_INK = "#FDF6E5";
+const FLAG = 0xfdf6e5;
 
 export interface Commission {
   area: number;
@@ -143,6 +148,13 @@ export function createEnclosureScene(P: typeof Phaser, config: { level: number }
     private ink!: Phaser.GameObjects.Graphics;
     private fill!: Phaser.GameObjects.Graphics;
     private banner!: Phaser.GameObjects.Text;
+    private butterflies: Array<{
+      obj: Phaser.GameObjects.Container;
+      speed: number;
+      phase: number;
+      baseY: number;
+    }> = [];
+    private calmMotion = false;
     private startedAt = 0;
 
     constructor() {
@@ -164,16 +176,30 @@ export function createEnclosureScene(P: typeof Phaser, config: { level: number }
         else if (cmd.type === "next") this.newCommission();
       });
 
+      this.calmMotion =
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
       this.drawGrid();
       this.fill = this.add.graphics().setDepth(1);
       this.ink = this.add.graphics().setDepth(2);
+
+      // The commission is a signboard staked at the meadow's edge, not a floating line.
+      const sign = this.add.graphics().setDepth(3);
+      sign.fillStyle(TIMBER_DARK, 1);
+      sign.fillRect(W / 2 - 3, 52, 6, 26);
+      sign.fillStyle(0x9c7448, 1);
+      sign.fillRoundedRect(W / 2 - 310, 22, 620, 44, 9);
+      sign.lineStyle(2, 0x7a5a38, 1);
+      sign.strokeRoundedRect(W / 2 - 310, 22, 620, 44, 9);
       this.banner = this.add
         .text(W / 2, 44, "", {
           fontFamily: "Georgia, serif",
-          fontSize: "26px",
-          color: INK,
+          fontSize: "25px",
+          color: BANNER_INK,
         })
-        .setOrigin(0.5);
+        .setOrigin(0.5)
+        .setDepth(4);
 
       // Tap the lattice point you want to walk to. Only orthogonal neighbours count, so a
       // stray tap can never teleport the line across the board.
@@ -205,14 +231,56 @@ export function createEnclosureScene(P: typeof Phaser, config: { level: number }
 
     private drawGrid() {
       const g = this.add.graphics().setDepth(0);
-      g.fillStyle(PAPER, 1);
-      g.fillRect(GRID_X, GRID_Y, COLS * CELL, ROWS * CELL);
-      g.lineStyle(1, LINE, 1);
+      // Mown stripes across the paddock, like a cut hayfield.
+      for (let c = 0; c < COLS; c++) {
+        g.fillStyle(c % 2 === 0 ? GRASS : GRASS_MOWN, 1);
+        g.fillRect(GRID_X + c * CELL, GRID_Y, CELL, ROWS * CELL);
+      }
+      g.lineStyle(1, GRID_LINE, 0.55);
       for (let c = 0; c <= COLS; c++) {
         g.lineBetween(GRID_X + c * CELL, GRID_Y, GRID_X + c * CELL, GRID_Y + ROWS * CELL);
       }
       for (let r = 0; r <= ROWS; r++) {
         g.lineBetween(GRID_X, GRID_Y + r * CELL, GRID_X + COLS * CELL, GRID_Y + r * CELL);
+      }
+      // Tufts and small flowers scattered outside the paddock so the field keeps going.
+      for (let i = 0; i < 26; i++) {
+        const x = this.rnd(10, W - 10);
+        const yTop = this.rnd(6, GRID_Y - 14);
+        const yBot = this.rnd(GRID_Y + ROWS * CELL + 10, H - 8);
+        const y = Math.random() < 0.5 ? yTop : yBot;
+        g.fillStyle(GRASS_MOWN, 1);
+        g.fillEllipse(x, y, this.rnd(8, 16), 5);
+        if (i % 4 === 0) {
+          g.fillStyle(i % 8 === 0 ? 0xe8e2f2 : 0xf2d8ac, 1);
+          g.fillCircle(x + 4, y - 4, 2.4);
+        }
+      }
+      // Butterflies for ambient life.
+      this.butterflies = [];
+      if (!this.calmMotion) {
+        for (let i = 0; i < 3; i++) {
+          const b = this.add.container(this.rnd(60, W - 60), this.rnd(20, 80));
+          const bg = this.add.graphics();
+          bg.fillStyle(FLAG, 0.9);
+          bg.fillEllipse(-3, 0, 5, 7);
+          bg.fillEllipse(3, 0, 5, 7);
+          b.add(bg);
+          b.setDepth(5);
+          this.butterflies.push({
+            obj: b,
+            speed: 14 + Math.random() * 12,
+            phase: Math.random() * Math.PI * 2,
+            baseY: b.y,
+          });
+          this.tweens.add({
+            targets: bg,
+            scaleX: 0.5,
+            duration: 160,
+            yoyo: true,
+            repeat: -1,
+          });
+        }
       }
     }
 
@@ -273,6 +341,27 @@ export function createEnclosureScene(P: typeof Phaser, config: { level: number }
       this.path.push({ ...next });
       this.head = { ...next };
       this.redraw();
+      this.postThunk(next);
+    }
+
+    /** A post going in has weight: a small dust puff at the strike point. */
+    private postThunk(p: Pt) {
+      if (this.calmMotion) return;
+      const { x, y } = this.px(p);
+      for (let i = 0; i < 4; i++) {
+        const d = this.add.circle(x, y, 1.5 + Math.random() * 1.5, 0xd8cfae, 0.7);
+        d.setDepth(6);
+        const a = Math.random() * Math.PI * 2;
+        this.tweens.add({
+          targets: d,
+          x: x + Math.cos(a) * (10 + Math.random() * 10),
+          y: y - Math.random() * 12,
+          alpha: 0,
+          duration: 280,
+          ease: "Cubic.easeOut",
+          onComplete: () => d.destroy(),
+        });
+      }
     }
 
     /** Fence spent so far, in unit edges. */
@@ -284,11 +373,19 @@ export function createEnclosureScene(P: typeof Phaser, config: { level: number }
       this.ink.clear();
       this.fill.clear();
 
-      // The walked line.
+      // The fence: a timber rail with its shadow, and a post at every corner walked.
       if (this.path.length > 1) {
-        this.ink.lineStyle(5, SAGE, 1);
-        this.ink.beginPath();
         const first = this.px(this.path[0]);
+        this.ink.lineStyle(7, 0x3d5233, 0.5);
+        this.ink.beginPath();
+        this.ink.moveTo(first.x, first.y + 3);
+        for (const p of this.path.slice(1)) {
+          const q = this.px(p);
+          this.ink.lineTo(q.x, q.y + 3);
+        }
+        this.ink.strokePath();
+        this.ink.lineStyle(5, TIMBER, 1);
+        this.ink.beginPath();
         this.ink.moveTo(first.x, first.y);
         for (const p of this.path.slice(1)) {
           const q = this.px(p);
@@ -296,22 +393,45 @@ export function createEnclosureScene(P: typeof Phaser, config: { level: number }
         }
         this.ink.strokePath();
       }
+      for (const p of this.path) {
+        const q = this.px(p);
+        this.ink.fillStyle(TIMBER_DARK, 1);
+        this.ink.fillCircle(q.x, q.y + 1.5, 5);
+        this.ink.fillStyle(TIMBER, 1);
+        this.ink.fillCircle(q.x, q.y, 4);
+      }
 
-      // Start post and head.
+      // The start post is the red one — the loop closes back on it.
       const s = this.px(this.path[0]);
-      this.ink.fillStyle(CLAY, 1);
-      this.ink.fillCircle(s.x, s.y, 6);
+      this.ink.fillStyle(POST_RED, 1);
+      this.ink.fillCircle(s.x, s.y, 6.5);
+      this.ink.fillStyle(0xffffff, 0.35);
+      this.ink.fillCircle(s.x - 1.5, s.y - 1.5, 2);
+
+      // Where she is now: a cream survey flag.
       const h = this.px(this.head);
-      this.ink.fillStyle(SAGE, 1);
-      this.ink.fillCircle(h.x, h.y, 8);
+      this.ink.fillStyle(TIMBER_DARK, 1);
+      this.ink.fillRect(h.x - 1, h.y - 16, 2, 16);
+      this.ink.fillStyle(FLAG, 1);
+      this.ink.fillTriangle(h.x + 1, h.y - 16, h.x + 13, h.y - 12, h.x + 1, h.y - 8);
+      this.ink.fillStyle(0x3d5233, 0.9);
+      this.ink.fillCircle(h.x, h.y, 3);
 
       // Live area shading, so she can see the enclosure forming rather than only at the
-      // end. This is the whole feedback loop of the game.
+      // end. This is the whole feedback loop of the game. Closed fields grow wheat.
       const closed = this.path.length > 4 && same(this.head, this.path[0]);
       const cells = closed ? enclosedCells(this.path.slice(0, -1)) : [];
-      this.fill.fillStyle(SAGE, 0.16);
       for (const cell of cells) {
-        this.fill.fillRect(GRID_X + cell.c * CELL + 1, GRID_Y + cell.r * CELL + 1, CELL - 2, CELL - 2);
+        const cx = GRID_X + cell.c * CELL;
+        const cy = GRID_Y + cell.r * CELL;
+        this.fill.fillStyle(WHEAT, 0.55);
+        this.fill.fillRect(cx + 1, cy + 1, CELL - 2, CELL - 2);
+        // A few wheat stalks per square.
+        this.fill.lineStyle(1.5, 0xb8912f, 0.8);
+        for (let i = 0; i < 3; i++) {
+          const sx = cx + 8 + i * 13;
+          this.fill.lineBetween(sx, cy + CELL - 8, sx + 3, cy + 10);
+        }
       }
 
       this.bus.emit({
@@ -361,6 +481,15 @@ export function createEnclosureScene(P: typeof Phaser, config: { level: number }
     /** Called by the host when she asks for another commission. */
     next() {
       this.newCommission();
+    }
+
+    update(t: number, delta: number) {
+      const dt = delta / 1000;
+      for (const b of this.butterflies) {
+        b.obj.x += b.speed * dt;
+        b.obj.y = b.baseY + Math.sin(t / 600 + b.phase) * 9;
+        if (b.obj.x > W + 12) b.obj.x = -12;
+      }
     }
   };
 }

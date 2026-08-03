@@ -20,9 +20,10 @@
 }
 
 .stage {
+  /* The workshop: steel housing, warm work light from above (plan 06). */
   position: relative;
-  background: var(--paper);
-  border: 1px solid var(--line);
+  background: linear-gradient(180deg, #414a58 0%, #37404d 55%, #2e3641 100%);
+  border: 1px solid #232a34;
   border-radius: 18px;
   padding: 22px;
 }
@@ -31,55 +32,70 @@
   font-size: 0.72rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ink3);
+  color: #9aa5b5;
   margin-bottom: 10px;
 }
 
 .machineRow { margin-bottom: 22px }
 .machine {
+  /* The housing: riveted steel casing with a sight-glass sheen. */
   display: flex;
   justify-content: center;
   padding: 22px 16px;
-  background: #fffdf9;
-  border: 1px solid var(--line);
+  background:
+    radial-gradient(circle at 12px 12px, #55606f 2px, transparent 2.5px),
+    radial-gradient(circle at calc(100% - 12px) 12px, #55606f 2px, transparent 2.5px),
+    radial-gradient(circle at 12px calc(100% - 12px), #55606f 2px, transparent 2.5px),
+    radial-gradient(circle at calc(100% - 12px) calc(100% - 12px), #55606f 2px, transparent 2.5px),
+    linear-gradient(180deg, #4c5666 0%, #414a58 100%);
+  border: 1px solid #5a6575;
   border-radius: 14px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 10px 24px -10px rgba(0, 0, 0, 0.6);
   overflow-x: auto;
 }
 
 /* Nesting is the precedence. Each operator draws a box around its two inputs, so what is
    wired deeper is literally drawn inside. */
 .node {
+  /* Each chamber is an inner casing: what is wired deeper sits physically inside. */
   display: inline-flex;
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  border: 1px solid #e2d6c0;
+  border: 1.5px solid #6b7688;
   border-radius: 12px;
-  background: rgba(255, 252, 247, 0.7);
+  background: rgba(30, 36, 45, 0.5);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35);
 }
 .leaf {
-  font-family: var(--mono);
-  font-size: 1.1rem;
-  min-width: 30px;
-  text-align: center;
-  padding: 5px 9px;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-}
-.hopper {
+  /* Number tokens: stamped cream tags riding the line. */
   font-family: var(--mono);
   font-size: 1.1rem;
   font-weight: 600;
   min-width: 30px;
   text-align: center;
   padding: 5px 9px;
-  background: #e8dbef;
-  border: 1px solid #a98cb8;
+  background: linear-gradient(180deg, #faf4e4 0%, #efe6cf 100%);
+  border: 1px solid #b9ad90;
   border-radius: 8px;
-  color: #6b4f7c;
+  color: #3d352c;
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.35);
+}
+.hopper {
+  font-family: var(--mono);
+  font-size: 1.1rem;
+  font-weight: 700;
+  min-width: 30px;
+  text-align: center;
+  padding: 5px 9px;
+  background: linear-gradient(180deg, #c9a2f0 0%, #a97fd6 100%);
+  border: 1px solid #7c58a8;
+  border-radius: 8px;
+  color: #2c1a40;
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.35);
 }
 .socket {
+  /* An empty socket waits, lit faintly amber, for a punch-plate. */
   appearance: none;
   font: inherit;
   font-family: var(--mono);
@@ -87,38 +103,45 @@
   cursor: pointer;
   width: 38px;
   height: 38px;
-  border: 1px dashed #c9b79b;
-  background: transparent;
-  color: var(--ink3);
+  border: 1.5px dashed #8d97a8;
+  background: rgba(0, 0, 0, 0.25);
+  color: #aab3c2;
   border-radius: 9px;
+  transition: 0.15s;
 }
+.socket:hover { border-color: #f2a03d; color: #f2c98a }
 .socket.filled {
   border-style: solid;
-  background: var(--clay-s);
-  border-color: #e2b89f;
-  color: var(--clay-d);
-  font-weight: 600;
+  background: linear-gradient(180deg, #5c4a24 0%, #4a3c1c 100%);
+  border-color: #b98a44;
+  color: #ffd873;
+  font-weight: 700;
+  box-shadow: 0 0 10px -2px rgba(242, 160, 61, 0.4);
 }
-.socket.sel { border-color: var(--clay-d); box-shadow: 0 0 0 3px rgba(190, 110, 78, 0.16) }
+.socket.sel { border-color: #f2a03d; box-shadow: 0 0 0 3px rgba(242, 160, 61, 0.3) }
 
 .tray { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 22px }
 .tray .label { width: 100% }
 .part {
+  /* Brass punch-plates in the parts bin. */
   appearance: none;
   font-family: var(--mono);
   font-size: 1.15rem;
+  font-weight: 700;
   cursor: pointer;
   width: 46px;
   height: 42px;
-  border: 1px solid var(--line);
-  background: var(--paper);
-  color: var(--ink);
+  border: 1px solid #8a6d2e;
+  background: linear-gradient(180deg, #d4b054 0%, #b98a44 70%, #96702f 100%);
+  color: #3a2c10;
   border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition: 0.12s;
 }
-.part:hover:not(:disabled) { border-color: var(--clay-d); color: var(--clay-d) }
+.part:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35) }
 .part:disabled { opacity: 0.4; cursor: default }
 
-.bench { border-top: 1px solid var(--line); padding-top: 16px }
+.bench { border-top: 1px solid #4a5462; padding-top: 16px }
 .runs { border-collapse: collapse; font-size: 0.9rem }
 .runs th {
   text-align: left;
@@ -126,24 +149,24 @@
   font-size: 0.72rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--ink3);
+  color: #9aa5b5;
   padding: 0 20px 6px 0;
 }
-.runs td { padding: 4px 20px 4px 0; font-size: 1rem }
-.good { color: var(--sage-d); font-weight: 600 }
-.bad { color: #8c4750 }
-.hint { color: var(--ink3); font-size: 0.84rem; margin: 10px 0 0 }
+.runs td { padding: 4px 20px 4px 0; font-size: 1rem; color: #dde3ee }
+.good { color: #9fd66d; font-weight: 600 }
+.bad { color: #e0a5ad }
+.hint { color: #9aa5b5; font-size: 0.84rem; margin: 10px 0 0 }
 
 .overlay {
   position: absolute;
   inset: 0;
   display: grid;
   place-items: center;
-  background: rgba(250, 246, 239, 0.92);
+  background: rgba(20, 25, 32, 0.66);
   border-radius: 18px;
   padding: 16px;
 }
-.panel { max-width: 440px }
+.panel { max-width: 440px; animation: pop 0.22s ease-out }
 .h2 { font-family: Georgia, serif; font-size: 1.45rem; margin: 0 0 6px }
 .sub { color: var(--ink2); margin: 0 0 8px }
 .expr {

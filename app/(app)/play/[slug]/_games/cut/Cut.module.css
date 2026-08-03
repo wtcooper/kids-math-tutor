@@ -22,8 +22,9 @@
 
 .stage {
   position: relative;
-  background: var(--paper);
-  border: 1px solid var(--line);
+  /* Mortar and shade: the wall is outdoors at the end of the day (plan 06). */
+  background: linear-gradient(180deg, #8f8579 0%, #837a6e 60%, #75695c 100%);
+  border: 1px solid #5f564c;
   border-radius: 18px;
   padding: 20px;
 }
@@ -33,28 +34,29 @@
   font-size: 0.72rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ink3);
+  color: #ded5c6;
 }
 .tool {
   appearance: none;
   font: inherit;
   font-size: 0.82rem;
   cursor: pointer;
-  border: 1px solid var(--line);
-  background: transparent;
-  color: var(--ink2);
+  border: 1px solid #a89c8c;
+  background: rgba(255, 250, 240, 0.12);
+  color: #f5efe4;
   border-radius: 999px;
   padding: 5px 14px;
+  transition: 0.15s;
 }
-.tool:hover:not(:disabled) { border-color: var(--line2); color: var(--ink) }
+.tool:hover:not(:disabled) { border-color: #ded5c6; background: rgba(255, 250, 240, 0.22) }
 .tool:disabled { opacity: 0.45; cursor: default }
 
 .wall { width: 100%; height: auto; display: block }
-.cap { font-size: 12px; fill: #9a8b7c; font-family: ui-sans-serif, system-ui, sans-serif }
+.cap { font-size: 12px; fill: #f0e9dc; font-family: ui-sans-serif, system-ui, sans-serif }
 .hit { cursor: pointer }
 
 .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px }
-.hint { color: var(--ink3); font-size: 0.86rem; margin: 12px 0 0 }
+.hint { color: #f0e9dc; font-size: 0.86rem; margin: 12px 0 0 }
 
 .overlay {
   position: absolute;

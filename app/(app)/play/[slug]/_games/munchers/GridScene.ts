@@ -32,11 +32,19 @@ const CELL_H = 82;
 const GRID_X = (W - COLS * CELL_W) / 2;
 const GRID_Y = 150;
 
-const PAPER = 0xfffcf7;
-const LINE = 0xeadfce;
+/** Stage palette — night orchard (plan 06). Tiles stay light so numbers stay readable. */
+const PAPER = 0xf2e9d2;
+const LINE = 0xd8ccae;
 const SAGE = 0x6d8e68;
 const CLAY = 0xbe6e4e;
 const BERRY = 0xaf5c63;
+const LOAM = 0x232019;
+const LOAM_LIGHT = 0x2e2a20;
+const MUNCHER = 0x9bc356;
+const MUNCHER_DARK = 0x6e9138;
+const GRUMP = 0x7b4b6e;
+const GRUMP_DARK = 0x5a3651;
+const BANNER_INK = "#F2E9D2";
 
 /** Roamer beat, in ms. Deliberately slow — this is pressure, not a reflex test. */
 const BEAT = 900;
@@ -185,6 +193,8 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
     private col = 2;
     private row = 2;
     private player!: Phaser.GameObjects.Container;
+    private playerCritter!: Phaser.GameObjects.Container;
+    private calmMotion = false;
     private banner!: Phaser.GameObjects.Text;
     private beatAcc = 0;
     private askedAt = 0;
@@ -208,27 +218,63 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
         else if (cmd.type === "resume") this.scene.resume();
       });
 
+      this.calmMotion =
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      // The orchard floor: a soft-lit loam panel behind the whole grid.
+      const floor = this.add.graphics();
+      floor.fillStyle(LOAM_LIGHT, 1);
+      floor.fillRoundedRect(GRID_X - 22, GRID_Y - 22, COLS * CELL_W + 44, ROWS * CELL_H + 44, 22);
+      floor.fillStyle(LOAM, 0.55);
+      floor.fillRoundedRect(GRID_X - 22, GRID_Y + ROWS * CELL_H - 8, COLS * CELL_W + 44, 30, 14);
+
       this.banner = this.add
         .text(W / 2, 74, "", {
           fontFamily: "Georgia, serif",
           fontSize: "30px",
-          color: "#3D352C",
+          color: BANNER_INK,
         })
         .setOrigin(0.5);
+      this.banner.setShadow(0, 1, "#141210", 5, true, true);
 
-      // A ring *and* a face. The ring alone read as a cursor, so it was not obvious which
-      // thing on the board was her.
+      // A ring *and* a creature. The ring alone read as a cursor, so it was not obvious
+      // which thing on the board was her — now a round lime muncher sits in the corner.
       this.player = this.add.container(0, 0);
+      const ring = this.add.graphics();
+      ring.lineStyle(3, MUNCHER, 1);
+      ring.strokeRoundedRect(-CELL_W / 2 + 4, -CELL_H / 2 + 4, CELL_W - 8, CELL_H - 8, 12);
+      this.player.add(ring);
+
+      const critter = this.add.container(-CELL_W / 2 + 22, -CELL_H / 2 + 18);
       const pg = this.add.graphics();
-      pg.lineStyle(3, CLAY, 1);
-      pg.strokeRoundedRect(-CELL_W / 2 + 4, -CELL_H / 2 + 4, CELL_W - 8, CELL_H - 8, 12);
-      pg.fillStyle(CLAY, 1);
-      pg.fillCircle(-CELL_W / 2 + 20, -CELL_H / 2 + 18, 11);
-      pg.fillStyle(PAPER, 1);
-      pg.fillCircle(-CELL_W / 2 + 16, -CELL_H / 2 + 15, 3);
-      pg.fillCircle(-CELL_W / 2 + 24, -CELL_H / 2 + 15, 3);
-      this.player.add(pg);
+      // Feet, body, cheeks, eyes, mouth.
+      pg.fillStyle(MUNCHER_DARK, 1);
+      pg.fillEllipse(-6, 12, 8, 5);
+      pg.fillEllipse(6, 12, 8, 5);
+      pg.fillStyle(MUNCHER, 1);
+      pg.fillCircle(0, 0, 13);
+      pg.fillStyle(0xffffff, 0.25);
+      pg.fillEllipse(-4, -5, 8, 6);
+      pg.fillStyle(0x2c3618, 1);
+      pg.fillCircle(-5, -3, 2.6);
+      pg.fillCircle(5, -3, 2.6);
+      pg.fillStyle(MUNCHER_DARK, 1);
+      pg.fillEllipse(0, 6, 9, 4.5);
+      critter.add(pg);
+      this.player.add(critter);
+      this.playerCritter = critter;
       this.player.setDepth(5);
+      if (!this.calmMotion) {
+        this.tweens.add({
+          targets: critter,
+          y: critter.y - 3,
+          duration: 700,
+          yoyo: true,
+          repeat: -1,
+          ease: "Sine.easeInOut",
+        });
+      }
 
       // Pointer-first: tap an adjacent cell to step, tap your own cell to munch.
       this.input.on("pointerdown", (p: Phaser.Input.Pointer) => this.onTap(p));
@@ -326,10 +372,15 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
       const x = GRID_X + c * CELL_W + CELL_W / 2;
       const y = GRID_Y + r * CELL_H + CELL_H / 2;
       const bg = this.add.graphics();
+      // A leaf-tile lying on dark loam: shadow under, lit face, soft top highlight.
+      bg.fillStyle(0x14110c, 0.55);
+      bg.fillRoundedRect(x - CELL_W / 2 + 5, y - CELL_H / 2 + 9, CELL_W - 10, CELL_H - 10, 12);
       bg.fillStyle(PAPER, 1);
       bg.lineStyle(1, LINE, 1);
       bg.fillRoundedRect(x - CELL_W / 2 + 5, y - CELL_H / 2 + 5, CELL_W - 10, CELL_H - 10, 12);
       bg.strokeRoundedRect(x - CELL_W / 2 + 5, y - CELL_H / 2 + 5, CELL_W - 10, CELL_H - 10, 12);
+      bg.fillStyle(0xffffff, 0.35);
+      bg.fillRoundedRect(x - CELL_W / 2 + 9, y - CELL_H / 2 + 8, CELL_W - 18, 10, 5);
       const text = this.add
         .text(x, y, String(n), {
           fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
@@ -344,11 +395,29 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
       return this.cells[r]?.[c] ?? null;
     }
 
-    private syncPlayer() {
-      this.player.setPosition(
-        GRID_X + this.col * CELL_W + CELL_W / 2,
-        GRID_Y + this.row * CELL_H + CELL_H / 2,
-      );
+    private syncPlayer(animate = false) {
+      const x = GRID_X + this.col * CELL_W + CELL_W / 2;
+      const y = GRID_Y + this.row * CELL_H + CELL_H / 2;
+      if (!animate || this.calmMotion) {
+        this.player.setPosition(x, y);
+        return;
+      }
+      // A hop between cells, not a teleport: quick move with a landing bounce.
+      this.tweens.add({
+        targets: this.player,
+        x,
+        y,
+        duration: 110,
+        ease: "Quad.easeOut",
+      });
+      this.tweens.add({
+        targets: this.playerCritter,
+        scaleX: 1.15,
+        scaleY: 0.85,
+        duration: 60,
+        delay: 100,
+        yoyo: true,
+      });
     }
 
     private onTap(p: Phaser.Input.Pointer) {
@@ -368,7 +437,7 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
     private step(dc: number, dr: number) {
       this.col = Math.min(COLS - 1, Math.max(0, this.col + dc));
       this.row = Math.min(ROWS - 1, Math.max(0, this.row + dr));
-      this.syncPlayer();
+      this.syncPlayer(true);
     }
 
     private munch() {
@@ -385,7 +454,7 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
       this.askedAt = this.time.now;
 
       if (!ok) {
-        // One shake. Nothing else — no penalty, no sound, no counter.
+        // One shake and a pulled face. Nothing else — no penalty, no sound, no counter.
         this.tweens.add({
           targets: [cell.text],
           x: cell.text.x + 6,
@@ -393,12 +462,33 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
           yoyo: true,
           repeat: 2,
         });
+        if (!this.calmMotion) {
+          this.tweens.add({
+            targets: this.playerCritter,
+            angle: { from: -10, to: 10 },
+            duration: 60,
+            yoyo: true,
+            repeat: 2,
+            onComplete: () => this.playerCritter.setAngle(0),
+          });
+        }
         return;
       }
 
       cell.eaten = true;
       this.eatenTargets.push(cell.n);
       cell.text.setColor("#4E6E4A");
+      // The chomp: the muncher gulps, the number pops, crumbs scatter.
+      if (!this.calmMotion) {
+        this.tweens.add({
+          targets: this.playerCritter,
+          scale: 1.35,
+          duration: 90,
+          yoyo: true,
+          ease: "Back.easeOut",
+        });
+        this.crumbs(cell.text.x, cell.text.y, MUNCHER);
+      }
       this.tweens.add({
         targets: [cell.text],
         alpha: 0,
@@ -412,6 +502,25 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
 
       this.pushState();
       if (this.remainingTargets() === 0) this.completeRound();
+    }
+
+    /** Crumb burst where a number was eaten — by her in lime, by a Grump in plum. */
+    private crumbs(x: number, y: number, color: number) {
+      for (let i = 0; i < 8; i++) {
+        const p = this.add.circle(x, y, 1.5 + Math.random() * 2, color, 0.9);
+        p.setDepth(6);
+        const a = Math.random() * Math.PI * 2;
+        const v = 24 + Math.random() * 34;
+        this.tweens.add({
+          targets: p,
+          x: x + Math.cos(a) * v,
+          y: y + Math.sin(a) * v + 10,
+          alpha: 0,
+          duration: 360 + Math.random() * 200,
+          ease: "Cubic.easeOut",
+          onComplete: () => p.destroy(),
+        });
+      }
     }
 
     private remainingTargets(): number {
@@ -446,22 +555,55 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
       const g = this.add.graphics();
       // Small and tucked into the cell's corner. A roamer centred on the cell covered the
       // number, so she could not read what she was about to eat.
-      g.fillStyle(BERRY, 0.9);
-      g.fillCircle(0, 0, 12);
-      g.fillStyle(0xfffcf7, 1);
-      g.fillCircle(-4, -3, 2.6);
-      g.fillCircle(4, -3, 2.6);
+      // A Grump: heavy plum body, stubby feet, brows that mean business.
+      g.fillStyle(GRUMP_DARK, 1);
+      g.fillEllipse(-5, 12, 7, 4);
+      g.fillEllipse(5, 12, 7, 4);
+      g.fillStyle(GRUMP, 1);
+      g.fillCircle(0, 0, 13);
+      g.fillStyle(0xffffff, 0.14);
+      g.fillEllipse(-4, -5, 7, 5);
+      g.fillStyle(0xf2e9d2, 1);
+      g.fillCircle(-4.5, -2, 3);
+      g.fillCircle(4.5, -2, 3);
+      g.fillStyle(0x2a1b26, 1);
+      g.fillCircle(-4.5, -1.5, 1.6);
+      g.fillCircle(4.5, -1.5, 1.6);
+      // The brows.
+      g.lineStyle(2.4, GRUMP_DARK, 1);
+      g.lineBetween(-8, -8, -1.5, -5.5);
+      g.lineBetween(8, -8, 1.5, -5.5);
+      // A grim little mouth.
+      g.lineBetween(-3.5, 6, 3.5, 6);
       obj.add(g);
+      obj.setDepth(6);
       const r: Roamer = { col: this.rnd(0, COLS - 1), row: 0, obj, chewing: 0 };
       this.roamers.push(r);
       this.placeRoamer(r);
     }
 
-    private placeRoamer(r: Roamer) {
-      r.obj.setPosition(
+    private roamerXY(r: Roamer): [number, number] {
+      return [
         GRID_X + r.col * CELL_W + CELL_W - 26,
         GRID_Y + r.row * CELL_H + CELL_H - 22,
-      );
+      ];
+    }
+
+    private placeRoamer(r: Roamer, animate = false) {
+      const [x, y] = this.roamerXY(r);
+      if (!animate || this.calmMotion) {
+        r.obj.setPosition(x, y);
+        return;
+      }
+      // A lumbering waddle: slower than her hop, with a heavy sway.
+      this.tweens.add({ targets: r.obj, x, y, duration: 320, ease: "Sine.easeInOut" });
+      this.tweens.add({
+        targets: r.obj,
+        angle: { from: -6, to: 6 },
+        duration: 160,
+        yoyo: true,
+        onComplete: () => r.obj.setAngle(0),
+      });
     }
 
     private moveRoamers() {
@@ -477,10 +619,30 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
           if (r.chewing >= GRUMP_CHEW) {
             r.chewing = 0;
             this.grumpEat(here);
+            if (!this.calmMotion) {
+              this.tweens.add({ targets: r.obj, scale: 1.35, duration: 110, yoyo: true });
+            }
             ateSomething = true;
             continue;
           }
-          // Stay put while chewing, so she can see where the threat is and get there.
+          // Stay put while chewing — and telegraph it, so losing the number is
+          // something she watched start, not a thing that happened off-screen.
+          if (!this.calmMotion) {
+            this.tweens.add({
+              targets: r.obj,
+              scale: 1.18,
+              duration: 140,
+              yoyo: true,
+              repeat: 2,
+            });
+            this.tweens.add({
+              targets: here.text,
+              alpha: 0.45,
+              duration: 180,
+              yoyo: true,
+              repeat: 1,
+            });
+          }
           continue;
         }
         r.chewing = 0;
@@ -495,7 +657,7 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
 
         r.col = Math.min(COLS - 1, Math.max(0, r.col));
         r.row = Math.min(ROWS - 1, Math.max(0, r.row));
-        this.placeRoamer(r);
+        this.placeRoamer(r, true);
 
         if (r.col === this.col && r.row === this.row) this.caught();
       }
@@ -527,6 +689,7 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
       cell.eaten = true;
       this.grumpScore++;
       cell.text.setColor("#A05560");
+      if (!this.calmMotion) this.crumbs(cell.text.x, cell.text.y, GRUMP);
       this.tweens.add({
         targets: [cell.text],
         alpha: 0,

@@ -188,37 +188,93 @@ export default function Cut({ slug, topicId, name, concept, levels, initialLevel
 
         <svg
           className={styles.wall}
-          viewBox={`0 0 ${BAR_W} ${BAR_H * 3 + 46}`}
+          viewBox={`0 0 ${BAR_W} ${BAR_H * 3 + 110}`}
           role="img"
           aria-label={`A gap ${gap.n} of ${gap.d} bricks wide`}
         >
-          {/* The wall, with the gap in it. */}
+          {/* A real wall: a course of bricks above and below, the gap in the middle
+              course. The fiction is drawn, not captioned. */}
           <text x={0} y={14} className={styles.cap}>
             The gap
           </text>
-          <rect x={0} y={22} width={BAR_W} height={BAR_H} rx={5} fill="#efe7db" />
-          <rect x={0} y={22} width={gapWidth} height={BAR_H} rx={5} fill="#fffcf7" stroke="#c9b79b" strokeDasharray="5 4" />
-          {/* Pieces laid into the gap. */}
-          {Array.from({ length: laid }, (_, i) => (
-            <rect
-              key={i}
-              x={i * pieceWidth + 1}
-              y={23}
-              width={pieceWidth - 2}
-              height={BAR_H - 2}
-              rx={3}
-              fill={i * pieceWidth + pieceWidth > gapWidth + 0.001 ? "#f2dade" : "#dce7d6"}
-              stroke={i * pieceWidth + pieceWidth > gapWidth + 0.001 ? "#c98d95" : "#8aa683"}
-            />
-          ))}
-          <line x1={gapWidth} y1={16} x2={gapWidth} y2={22 + BAR_H + 6} stroke="#be6e4e" strokeWidth={2} />
+          {[0, 1].map((row) => {
+            const y = row === 0 ? 20 : 22 + 24 + 4 + BAR_H + 4;
+            const offset = row === 0 ? -34 : 0;
+            return (
+              <g key={row}>
+                {Array.from({ length: 11 }, (_, i) => (
+                  <rect
+                    key={i}
+                    x={offset + i * 68}
+                    y={y}
+                    width={64}
+                    height={24}
+                    rx={2}
+                    fill={i % 3 === 1 ? "#A8503A" : "#B0563B"}
+                    stroke="#8F4530"
+                  />
+                ))}
+              </g>
+            );
+          })}
+
+          {/* The middle course: solid wall to the right, the gap on the left. */}
+          <g transform={`translate(0 ${22 + 28})`}>
+            {Array.from({ length: Math.ceil((BAR_W - gapWidth) / 68) + 1 }, (_, i) => {
+              const w = Math.min(64, BAR_W - (gapWidth + 4 + i * 68));
+              if (w <= 0) return null;
+              return (
+                <rect
+                  key={i}
+                  x={gapWidth + 4 + i * 68}
+                  y={0}
+                  width={w}
+                  height={BAR_H}
+                  rx={2}
+                  fill={i % 2 === 0 ? "#B0563B" : "#A8503A"}
+                  stroke="#8F4530"
+                />
+              );
+            })}
+            {/* The gap itself: dark, empty, chalk-marked. */}
+            <rect x={0} y={0} width={gapWidth} height={BAR_H} rx={3} fill="#2E2621" stroke="#F5EFE4" strokeDasharray="6 5" strokeOpacity={0.7} />
+            {/* Pieces laid into the gap: fresh bricks; past the chalk line they jut wrong. */}
+            {Array.from({ length: laid }, (_, i) => {
+              const over = i * pieceWidth + pieceWidth > gapWidth + 0.001;
+              return (
+                <g key={i}>
+                  <rect
+                    x={i * pieceWidth + 1}
+                    y={2}
+                    width={pieceWidth - 2}
+                    height={BAR_H - 4}
+                    rx={2}
+                    fill={over ? "#7A4A3E" : "#C97856"}
+                    stroke={over ? "#5E3A32" : "#9C5A3E"}
+                  />
+                  <rect
+                    x={i * pieceWidth + 3}
+                    y={4}
+                    width={Math.max(0, pieceWidth - 6)}
+                    height={5}
+                    rx={2}
+                    fill="#DE9270"
+                    opacity={over ? 0.3 : 0.8}
+                  />
+                </g>
+              );
+            })}
+            {/* The mason's chalk line marking exactly where the gap ends. */}
+            <line x1={gapWidth} y1={-8} x2={gapWidth} y2={BAR_H + 8} stroke="#F5EFE4" strokeWidth={2.5} />
+          </g>
 
           {/* The brick you are cutting from. */}
-          <text x={0} y={BAR_H + 52} className={styles.cap}>
+          <text x={0} y={22 + 28 + BAR_H + 40 + 24} className={styles.cap}>
             Your brick, cut into {denom}
           </text>
-          <g transform={`translate(0 ${BAR_H + 60})`}>
-            <rect x={0} y={0} width={BAR_W} height={BAR_H} rx={5} fill="#fdf6e9" stroke="#d8c8ac" />
+          <g transform={`translate(0 ${22 + 28 + BAR_H + 40 + 32})`}>
+            <rect x={0} y={0} width={BAR_W} height={BAR_H} rx={4} fill="#C97856" stroke="#9C5A3E" />
+            <rect x={3} y={3} width={BAR_W - 6} height={7} rx={3} fill="#DE9270" opacity={0.8} />
             {Array.from({ length: denom - 1 }, (_, i) => (
               <line
                 key={i}
@@ -226,7 +282,8 @@ export default function Cut({ slug, topicId, name, concept, levels, initialLevel
                 y1={0}
                 x2={(i + 1) * pieceWidth}
                 y2={BAR_H}
-                stroke="#d8c8ac"
+                stroke="#6E3F2E"
+                strokeWidth={1.5}
               />
             ))}
           </g>
@@ -235,7 +292,7 @@ export default function Cut({ slug, topicId, name, concept, levels, initialLevel
             x={0}
             y={0}
             width={BAR_W}
-            height={BAR_H + 30}
+            height={22 + 28 + BAR_H + 20}
             fill="transparent"
             onClick={addPiece}
             className={styles.hit}

@@ -6,6 +6,7 @@
   font-size: 0.82rem;
 }
 .soft { color: var(--ink3); font-size: 0.82rem }
+.panel { animation: pop 0.22s ease-out }
 .mini {
   appearance: none;
   font: inherit;
@@ -21,34 +22,38 @@
 .mini:disabled { opacity: 0.45; cursor: default }
 
 .stage {
+  /* The stonemason's bench: dark walnut, the slab lit on top of it (plan 06). */
   position: relative;
-  background: var(--paper);
-  border: 1px solid var(--line);
+  background: linear-gradient(180deg, #55432f 0%, #4a3a2c 30%, #3f3125 100%);
+  border: 1px solid #32271d;
   border-radius: 18px;
   padding: 20px;
 }
 
 .cutRow { display: flex; gap: 22px; flex-wrap: wrap; margin-bottom: 18px }
 .cutLabel { display: flex; flex-direction: column; gap: 5px; flex: 1 1 210px }
-.cutText { font-family: var(--mono); font-size: 0.84rem; color: var(--ink2) }
-.cutLabel input[type="range"] { width: 100%; accent-color: var(--clay) }
+.cutText { font-family: var(--mono); font-size: 0.84rem; color: #e8dcc8 }
+.cutLabel input[type="range"] { width: 100%; accent-color: #5b84b1 }
 
 .board {
+  /* The slab: cut stone with a lit face and a heavy shadow onto the bench. */
   position: relative;
-  background: #fffcf7;
-  border: 1px solid #b9a88f;
+  background: linear-gradient(160deg, #e3dac9 0%, #d9cfbe 55%, #cfc4b0 100%);
+  border: 1px solid #a4977f;
   border-radius: 4px;
   margin: 0 auto 16px;
   max-width: 100%;
+  box-shadow: 0 10px 24px -8px rgba(20, 14, 8, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 .region {
+  /* Each piece reads as separately cut stone: a scored chisel line between pieces. */
   position: absolute;
-  border: 1px solid #d8c8ac;
+  border: 1.5px dashed #a4977f;
   overflow: hidden;
   display: flex;
 }
-.region.right { border-color: #8aa683 }
+.region.right { border-style: solid; border-color: #8aa683 }
 
 /* What she claimed, drawn as a proportion of the piece: short if under, spilling if over. */
 .fill {
@@ -56,10 +61,15 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: #dce7d6;
+  /* The claim is polish: the worked area of the stone shines. */
+  background: linear-gradient(180deg, #f0e2b8 0%, #e5cf94 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
   transition: height 0.18s ease-out;
 }
-.fill.over { background: #f2dade }
+.fill.over {
+  /* Too much claimed: the stain runs past the piece. */
+  background: linear-gradient(180deg, #c8a09a 0%, #b98a86 100%);
+}
 
 .regionBody {
   position: relative;
@@ -73,9 +83,11 @@
   padding: 4px;
 }
 .dims {
+  /* Chalk-marked dimensions, the mason's blue line. */
   font-family: var(--mono);
   font-size: 0.78rem;
-  color: var(--ink2);
+  font-weight: 600;
+  color: #4a6d94;
   white-space: nowrap;
 }
 .easy { color: var(--clay-d); margin-left: 3px }
@@ -96,23 +108,25 @@
 .claimOk { border-color: #8aa683; background: var(--sage-s); color: var(--sage-d); font-weight: 600 }
 
 .running {
+  /* Carved along the bench front. */
   margin: 0;
   text-align: center;
   font-family: var(--mono);
   font-size: 1.05rem;
+  color: #cbb894;
 }
-.good { color: var(--sage-d); font-weight: 600 }
-.unknown { color: var(--ink3) }
-.plus { color: var(--ink3) }
-.runTotal { color: var(--ink); font-weight: 600 }
-.hintLine { margin: 0; text-align: center; color: var(--ink3); font-size: 0.88rem }
+.good { color: #b8d49a; font-weight: 600 }
+.unknown { color: #8d7c62 }
+.plus { color: #8d7c62 }
+.runTotal { color: #f2e6cc; font-weight: 600 }
+.hintLine { margin: 0; text-align: center; color: #cbb894; font-size: 0.88rem }
 
 .overlay {
   position: absolute;
   inset: 0;
   display: grid;
   place-items: center;
-  background: rgba(250, 246, 239, 0.93);
+  background: rgba(38, 29, 20, 0.6);
   border-radius: 18px;
   padding: 16px;
 }

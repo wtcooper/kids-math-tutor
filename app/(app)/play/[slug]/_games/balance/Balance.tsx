@@ -185,12 +185,23 @@ export default function Balance({ slug, topicId, name, concept, levels, initialL
       }
     >
       <div className={styles.stage}>
-        <div className={styles.scaleWrap}>
-          <Pan side={scale.left} label="left pan" />
-          <div className={styles.pivot}>
-            <span className={styles.equals}>=</span>
+        {/* A drawn balance: post, brass beam, chains, hanging pans. The beam settles with
+            a small rock on every move (key remount re-runs the animation) — the scale is
+            always level because every move was done to both sides, and the settle sells
+            the weight. */}
+        <div className={styles.scaleWrap} key={moves}>
+          <div className={styles.beamAssembly} aria-hidden>
+            <div className={styles.beam} />
+            <div className={styles.finial} />
           </div>
-          <Pan side={scale.right} label="right pan" />
+          <div className={styles.pansRow}>
+            <Pan side={scale.left} label="left pan" />
+            <div className={styles.pivot}>
+              <div className={styles.post} />
+              <span className={styles.equals}>=</span>
+            </div>
+            <Pan side={scale.right} label="right pan" />
+          </div>
         </div>
 
         <div className={styles.controls}>

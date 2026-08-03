@@ -48,12 +48,22 @@ const REACH = 230;
 /** The frog rides slightly high on a stone so it never covers the number it landed on. */
 const FROG_LIFT = 15;
 
-const PAPER = 0xfffcf7;
-const LINE = 0xeadfce;
-const WATER = 0xe8eef0;
-const INK = "#3D352C";
-const SAGE = 0x6d8e68;
-const CLAY = 0xbe6e4e;
+/** Stage palette — the river at dusk (plan 06). Paper tokens stay outside the canvas. */
+const WATER_DEEP = 0x173b47;
+const RIPPLE = 0xdfeef2;
+const BANK_MOSS = 0x3e5a3c;
+const BANK_EDGE = 0x2f4630;
+const REED = 0x55764e;
+const STONE_FILL = 0xe8dcc4;
+const STONE_SHADE = 0xc9b998;
+const STONE_INK = "#3D352C";
+const BANNER_INK = "#F2EADC";
+const STRIP_INK = "#C8B99C";
+const NEXT_GLOW = 0xffd873;
+const FROG_BODY = 0x8fbf6a;
+const FROG_DARK = 0x5d8c42;
+const FIREFLY = 0xffd873;
+const SIGN_WOOD = 0x8a6642;
 
 /** Crossings completed before each fade stage. Progress-based, not level-based. */
 const FADE_LIST = 2;
@@ -65,11 +75,24 @@ interface Stone {
   container: Phaser.GameObjects.Container;
   label: Phaser.GameObjects.Text;
   bg: Phaser.GameObjects.Graphics;
+  /** Moonlit ring shown while this stone's row is the one to hop to next. */
+  ring: Phaser.GameObjects.Graphics;
+  /** Phase offset so the stones bob out of step, like real water. */
+  bob: number;
   value: number;
   ok: boolean;
   x: number;
   row: number;
   sinking: boolean;
+}
+
+interface Drift {
+  obj: Phaser.GameObjects.Graphics | Phaser.GameObjects.Arc;
+  speed: number;
+  /** Fireflies wander on a sine; ripples just drift. */
+  wobble: number;
+  phase: number;
+  baseY: number;
 }
 
 export interface Rule {
@@ -167,6 +190,10 @@ export function createCrossingScene(P: typeof Phaser, config: CrossingConfig) {
 
     private banner!: Phaser.GameObjects.Text;
     private strip!: Phaser.GameObjects.Text;
+    private ripples: Drift[] = [];
+    private fireflies: Drift[] = [];
+    private frogShadow!: Phaser.GameObjects.Ellipse;
+    private calmMotion = false;
     private crossings = 0;
     private hopping = false;
     private askedAt = 0;
@@ -185,6 +212,9 @@ export function createCrossingScene(P: typeof Phaser, config: CrossingConfig) {
 
     create() {
       this.bus = this.registry.get("bus") as GameBus;
+      this.calmMotion =
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       this.offCommand = this.bus.onCommand((cmd: GameCommand) => {
         if (cmd.type === "level:set") {
           this.level = cmd.level;
@@ -200,16 +230,19 @@ export function createCrossingScene(P: typeof Phaser, config: CrossingConfig) {
         .text(W / 2, 26, "", {
           fontFamily: "Georgia, serif",
           fontSize: "27px",
-          color: INK,
+          color: BANNER_INK,
         })
-        .setOrigin(0.5);
+        .setOrigin(0.5)
+        .setDepth(4);
+      this.banner.setShadow(0, 1, "#22371F", 4, true, true);
       this.strip = this.add
         .text(W / 2, 54, "", {
           fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
           fontSize: "16px",
-          color: "#9A8B7C",
+          color: STRIP_INK,
         })
-        .setOrigin(0.5);
+        .setOrigin(0.5)
+        .setDepth(4);
 
       this.frog = this.makeFrog();
 
@@ -232,38 +265,149 @@ export function createCrossingScene(P: typeof Phaser, config: CrossingConfig) {
 
     private drawScenery() {
       const g = this.add.graphics();
-      g.fillStyle(WATER, 1);
-      g.fillRect(0, BANK_TOP_Y + 26, W, BANK_BOTTOM_Y - BANK_TOP_Y - 52);
-      // Banks.
-      g.fillStyle(0xe6e9d8, 1);
-      g.fillRoundedRect(0, BANK_TOP_Y - 22, W, 48, 10);
-      g.fillRoundedRect(0, BANK_BOTTOM_Y - 24, W, 52, 10);
-      g.lineStyle(1, LINE, 1);
-      g.strokeRoundedRect(0, BANK_TOP_Y - 22, W, 48, 10);
-      g.strokeRoundedRect(0, BANK_BOTTOM_Y - 24, W, 52, 10);
 
-      this.add
-        .text(W / 2, BANK_TOP_Y, "SAFE", {
-          fontFamily: "ui-sans-serif, system-ui, sans-serif",
-          fontSize: "15px",
-          color: "#7E8C6A",
-        })
-        .setOrigin(0.5);
+      // The river, deep and dark, with a faint band of moonlight down the middle.
+      g.fillStyle(WATER_DEEP, 1);
+      g.fillRect(0, BANK_TOP_Y + 4, W, BANK_BOTTOM_Y - BANK_TOP_Y - 8);
+      g.fillStyle(0x1e4757, 0.55);
+      g.fillEllipse(W / 2, (BANK_TOP_Y + BANK_BOTTOM_Y) / 2, W * 0.85, 240);
+
+      // Banks: mossy turf with a darker waterline lip.
+      g.fillStyle(BANK_MOSS, 1);
+      g.fillRect(0, 0, W, BANK_TOP_Y + 26);
+      g.fillRect(0, BANK_BOTTOM_Y - 26, W, H - BANK_BOTTOM_Y + 26);
+      g.fillStyle(BANK_EDGE, 1);
+      g.fillRect(0, BANK_TOP_Y + 20, W, 6);
+      g.fillRect(0, BANK_BOTTOM_Y - 26, W, 6);
+
+      // Grass tufts along both waterlines.
+      g.fillStyle(REED, 1);
+      for (let x = 14; x < W; x += this.rnd(34, 66)) {
+        const y = Math.random() < 0.5 ? BANK_TOP_Y + 22 : BANK_BOTTOM_Y - 24;
+        g.fillEllipse(x, y, this.rnd(10, 20), 7);
+      }
+
+      // Reed clumps: three stems and a seed head, a few per bank.
+      for (let i = 0; i < 5; i++) {
+        const rx = this.rnd(30, W - 30);
+        const ry = Math.random() < 0.5 ? BANK_TOP_Y + 14 : BANK_BOTTOM_Y - 12;
+        for (let s = -1; s <= 1; s++) {
+          g.lineStyle(2, REED, 1);
+          g.lineBetween(rx + s * 5, ry, rx + s * 7, ry - this.rnd(16, 26));
+        }
+        g.fillStyle(SIGN_WOOD, 1);
+        g.fillEllipse(rx + 7, ry - 24, 4, 9);
+      }
+
+      // Drifting ripple glints — the water is never still.
+      this.ripples = [];
+      if (!this.calmMotion) {
+        for (let i = 0; i < 26; i++) {
+          const rg = this.add.graphics();
+          rg.fillStyle(RIPPLE, 0.1 + Math.random() * 0.08);
+          rg.fillRoundedRect(-14, -1.5, 28, 3, 1.5);
+          rg.setPosition(
+            Math.random() * W,
+            BANK_TOP_Y + 40 + Math.random() * (BANK_BOTTOM_Y - BANK_TOP_Y - 80),
+          );
+          this.ripples.push({
+            obj: rg,
+            speed: 12 + Math.random() * 22,
+            wobble: 0,
+            phase: 0,
+            baseY: 0,
+          });
+        }
+      }
+
+      // A painted wooden sign on the far bank, in the world instead of a floating word.
+      const sign = this.add.container(W - 86, BANK_TOP_Y - 26);
+      const sg = this.add.graphics();
+      sg.fillStyle(0x6f5136, 1);
+      sg.fillRect(-3, 10, 6, 26);
+      sg.fillStyle(SIGN_WOOD, 1);
+      sg.fillRoundedRect(-42, -12, 84, 26, 6);
+      sign.add(sg);
+      sign.add(
+        this.add
+          .text(0, 1, "FAR BANK", {
+            fontFamily: "ui-sans-serif, system-ui, sans-serif",
+            fontSize: "13px",
+            color: "#F2EADC",
+          })
+          .setOrigin(0.5),
+      );
+      sign.setDepth(2);
+
+      // Fireflies over the far bank — ambient life, nothing more.
+      this.fireflies = [];
+      if (!this.calmMotion) {
+        for (let i = 0; i < 6; i++) {
+          const baseY = this.rnd(16, BANK_TOP_Y + 6);
+          const fly = this.add.circle(this.rnd(20, W - 20), baseY, 2, FIREFLY, 0.85);
+          fly.setDepth(3);
+          this.tweens.add({
+            targets: fly,
+            alpha: 0.15,
+            duration: 700 + Math.random() * 900,
+            yoyo: true,
+            repeat: -1,
+            delay: Math.random() * 1200,
+          });
+          this.fireflies.push({
+            obj: fly,
+            speed: 6 + Math.random() * 10,
+            wobble: 6 + Math.random() * 8,
+            phase: Math.random() * Math.PI * 2,
+            baseY,
+          });
+        }
+      }
     }
 
     private makeFrog() {
+      // Shadow first, a sibling rather than a child, so a hop can leave it behind.
+      this.frogShadow = this.add.ellipse(this.frogX, BANK_BOTTOM_Y + 12, 34, 10, 0x000000, 0.25);
+      this.frogShadow.setDepth(9);
+
       const c = this.add.container(this.frogX, BANK_BOTTOM_Y);
       const g = this.add.graphics();
-      g.fillStyle(SAGE, 1);
-      g.fillCircle(0, 0, 19);
+      // Haunches out to the sides, then the body over them, seen from above.
+      g.fillStyle(FROG_DARK, 1);
+      g.fillEllipse(-13, 6, 14, 18);
+      g.fillEllipse(13, 6, 14, 18);
+      g.fillStyle(FROG_BODY, 1);
+      g.fillEllipse(0, 0, 30, 38);
+      // Back markings and a belly sheen.
+      g.fillStyle(FROG_DARK, 0.55);
+      g.fillEllipse(0, 6, 14, 16);
+      g.fillStyle(0xffffff, 0.14);
+      g.fillEllipse(-5, -8, 10, 12);
+      // Eyes on top, looking up-river.
+      g.fillStyle(FROG_DARK, 1);
+      g.fillCircle(-8, -15, 6.5);
+      g.fillCircle(8, -15, 6.5);
       g.fillStyle(0xfffcf7, 1);
-      g.fillCircle(-7, -7, 6);
-      g.fillCircle(7, -7, 6);
-      g.fillStyle(0x2f2a24, 1);
-      g.fillCircle(-7, -7, 2.8);
-      g.fillCircle(7, -7, 2.8);
+      g.fillCircle(-8, -16, 4.4);
+      g.fillCircle(8, -16, 4.4);
+      g.fillStyle(0x22301c, 1);
+      g.fillCircle(-8, -17, 2.2);
+      g.fillCircle(8, -17, 2.2);
       c.add(g);
       c.setDepth(10);
+
+      // An idle breath so the frog is alive even while she thinks.
+      if (!this.calmMotion) {
+        this.tweens.add({
+          targets: c,
+          scaleX: 1.04,
+          scaleY: 0.97,
+          duration: 900,
+          yoyo: true,
+          repeat: -1,
+          ease: "Sine.easeInOut",
+        });
+      }
       return c;
     }
 
@@ -332,20 +476,45 @@ export function createCrossingScene(P: typeof Phaser, config: CrossingConfig) {
       const value = this.pickValue(ok, row);
       const realOk = value === this.rule.sequence[row];
       const container = this.add.container(x, ROW_Y[row]);
+
+      // The moonlit ring, lit only while this row is the one to hop to next.
+      const ring = this.add.graphics();
+      ring.lineStyle(2.5, NEXT_GLOW, 0.55);
+      ring.strokeEllipse(0, 2, STONE_W + 14, STONE_H + 12);
+      ring.setVisible(false);
+
       const bg = this.add.graphics();
-      bg.fillStyle(PAPER, 1);
-      bg.lineStyle(1, LINE, 1);
-      bg.fillRoundedRect(-STONE_W / 2, -STONE_H / 2, STONE_W, STONE_H, 16);
-      bg.strokeRoundedRect(-STONE_W / 2, -STONE_H / 2, STONE_W, STONE_H, 16);
+      // A worn river stone: dark waterline, shaded underside, lit top.
+      bg.fillStyle(0x0e2831, 0.6);
+      bg.fillEllipse(0, 6, STONE_W + 8, STONE_H + 2);
+      bg.fillStyle(STONE_SHADE, 1);
+      bg.fillEllipse(0, 3, STONE_W, STONE_H);
+      bg.fillStyle(STONE_FILL, 1);
+      bg.fillEllipse(0, -2, STONE_W - 4, STONE_H - 8);
+      bg.fillStyle(0xffffff, 0.35);
+      bg.fillEllipse(-STONE_W / 5, -STONE_H / 4, STONE_W / 2.4, STONE_H / 3.6);
+
       const label = this.add
-        .text(0, 0, String(value), {
+        .text(0, -2, String(value), {
           fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
           fontSize: "28px",
-          color: INK,
+          fontStyle: "bold",
+          color: STONE_INK,
         })
         .setOrigin(0.5);
-      container.add([bg, label]);
-      return { container, label, bg, value, ok: realOk, x, row, sinking: false };
+      container.add([ring, bg, label]);
+      return {
+        container,
+        label,
+        bg,
+        ring,
+        bob: Math.random() * Math.PI * 2,
+        value,
+        ok: realOk,
+        x,
+        row,
+        sinking: false,
+      };
     }
 
     private renderBanner() {
@@ -466,14 +635,46 @@ export function createCrossingScene(P: typeof Phaser, config: CrossingConfig) {
     private hopTo(stone: Stone) {
       this.hopping = true;
       const fromRow = this.frogRow;
+      const dur = 200;
+
+      // Squash to load the jump, stretch through the air, land() squashes again.
+      if (!this.calmMotion) {
+        this.tweens.add({
+          targets: this.frog,
+          scaleX: 1.25,
+          scaleY: 0.75,
+          duration: 55,
+          yoyo: true,
+          onComplete: () => {
+            this.tweens.add({ targets: this.frog, scaleX: 0.85, scaleY: 1.2, duration: 70 });
+          },
+        });
+        // The shadow stays on the water and shrinks while the frog is airborne.
+        this.frogShadow.setPosition(this.frog.x, this.frogY() + 14);
+        this.tweens.add({
+          targets: this.frogShadow,
+          x: stone.container.x,
+          y: ROW_Y[stone.row] + 12,
+          scaleX: 0.6,
+          scaleY: 0.6,
+          alpha: 0.12,
+          duration: dur,
+          ease: "Quad.easeOut",
+        });
+      }
+
       this.tweens.add({
         targets: this.frog,
         x: stone.container.x,
         y: ROW_Y[stone.row] - FROG_LIFT,
-        duration: 170,
+        duration: dur,
         ease: "Quad.easeOut",
         onComplete: () => {
           this.hopping = false;
+          if (!this.calmMotion) {
+            this.frogShadow.setScale(1).setAlpha(0.25);
+            this.frogShadow.setPosition(stone.container.x, ROW_Y[stone.row] + 12);
+          }
           this.land(stone, fromRow);
         },
       });
@@ -505,6 +706,11 @@ export function createCrossingScene(P: typeof Phaser, config: CrossingConfig) {
       this.renderBanner();
       this.pushState();
       stone.bg.setAlpha(1);
+      // The landing has weight: the frog squashes, the stone dips and rings the water.
+      if (!this.calmMotion) {
+        this.tweens.add({ targets: this.frog, scaleX: 1.15, scaleY: 0.85, duration: 70, yoyo: true });
+        this.splash(stone.container.x, ROW_Y[stone.row] + 8, 0.5);
+      }
       this.tweens.add({
         targets: stone.container,
         scaleX: 1.06,
@@ -514,21 +720,66 @@ export function createCrossingScene(P: typeof Phaser, config: CrossingConfig) {
       });
     }
 
-    /** Free and silent. Back to the near bank, board untouched. */
+    /** Expanding ripple rings on the water. Scale tracks how big the event was. */
+    private splash(x: number, y: number, size: number) {
+      for (let i = 0; i < 2; i++) {
+        const ring = this.add.graphics();
+        ring.lineStyle(2, RIPPLE, 0.4 - i * 0.15);
+        ring.strokeEllipse(0, 0, 30, 12);
+        ring.setPosition(x, y);
+        ring.setDepth(8);
+        this.tweens.add({
+          targets: ring,
+          scaleX: (2.2 + i) * size * 2,
+          scaleY: (2.2 + i) * size * 2,
+          alpha: 0,
+          duration: 520 + i * 160,
+          ease: "Cubic.easeOut",
+          onComplete: () => ring.destroy(),
+        });
+      }
+    }
+
+    /** Free and silent. The plop is drawn — rings, a dip below the surface — and the
+     *  frog pops back up on the near bank with a shake-off wiggle. No penalty anywhere. */
     private sink(stone: Stone) {
       stone.sinking = true;
       this.frogStone = null;
+      if (!this.calmMotion) {
+        this.splash(stone.container.x, stone.container.y + 4, 1);
+        this.frogShadow.setAlpha(0);
+      }
       this.tweens.add({
         targets: [stone.container, this.frog],
-        alpha: 0.25,
-        duration: 190,
+        alpha: 0.15,
+        y: `+=${this.calmMotion ? 0 : 10}`,
+        scaleX: 0.92,
+        scaleY: 0.92,
+        duration: 230,
+        ease: "Quad.easeIn",
         onComplete: () => {
           stone.sinking = false;
           stone.container.setAlpha(1);
-          this.frog.setAlpha(1);
+          stone.container.setScale(1);
+          stone.container.y = ROW_Y[stone.row];
+          this.frog.setScale(1);
           this.frogRow = -1;
           this.frogX = W / 2;
           this.frog.setPosition(this.frogX, BANK_BOTTOM_Y);
+          this.frog.setAlpha(1);
+          if (!this.calmMotion) {
+            this.frogShadow.setAlpha(0.25);
+            this.frogShadow.setPosition(this.frogX, BANK_BOTTOM_Y + 12);
+            // Shake the water off.
+            this.tweens.add({
+              targets: this.frog,
+              angle: { from: -8, to: 8 },
+              duration: 70,
+              yoyo: true,
+              repeat: 2,
+              onComplete: () => this.frog.setAngle(0),
+            });
+          }
           this.renderBanner();
           this.pushState();
         },
@@ -544,6 +795,17 @@ export function createCrossingScene(P: typeof Phaser, config: CrossingConfig) {
       this.frogRow = ROW_Y.length;
       this.frogStone = null;
       this.frog.setPosition(this.frogX, BANK_TOP_Y);
+      // Made it: a happy double bounce on the far bank.
+      if (!this.calmMotion) {
+        this.tweens.add({
+          targets: this.frog,
+          y: BANK_TOP_Y - 12,
+          duration: 130,
+          yoyo: true,
+          repeat: 1,
+          ease: "Quad.easeOut",
+        });
+      }
 
       this.bus.emit({
         type: "round:complete",
@@ -559,10 +821,11 @@ export function createCrossingScene(P: typeof Phaser, config: CrossingConfig) {
       }
     }
 
-    update(_t: number, delta: number) {
+    update(t: number, delta: number) {
       const dt = delta / 1000;
       // Speed is the only difficulty knob, and it never accelerates within a crossing.
       const base = 34 + this.level * 5;
+      const next = this.nextRow();
 
       this.rows.forEach((stones, row) => {
         const dir = row % 2 === 0 ? 1 : -1;
@@ -571,19 +834,39 @@ export function createCrossingScene(P: typeof Phaser, config: CrossingConfig) {
           s.container.x += speed * dt;
           if (s.container.x > TRACK - 90) s.container.x -= TRACK;
           else if (s.container.x < -90) s.container.x += TRACK;
+          // Bob on the water, each stone out of phase; skip while a sink is animating.
+          if (!s.sinking && !this.calmMotion) {
+            s.container.y = ROW_Y[s.row] + Math.sin(t / 480 + s.bob) * 2.4;
+          }
+          // Moonlight on the row she can actually hop to.
+          s.ring.setVisible(s.row === next && !s.sinking);
         }
       });
 
-      // Ride the stone you are standing on.
+      // Ambient water and fireflies.
+      for (const r of this.ripples) {
+        r.obj.x += r.speed * dt;
+        if (r.obj.x > W + 20) r.obj.x = -20;
+      }
+      for (const f of this.fireflies) {
+        f.obj.x += f.speed * dt;
+        f.obj.y = f.baseY + Math.sin(t / 700 + f.phase) * f.wobble;
+        if (f.obj.x > W + 10) f.obj.x = -10;
+      }
+
+      // Ride the stone you are standing on — including its bob.
       if (this.frogStone && !this.hopping) {
         this.frogX = this.frogStone.container.x;
-        this.frog.setPosition(this.frogX, ROW_Y[this.frogStone.row] - FROG_LIFT);
+        this.frog.setPosition(this.frogX, this.frogStone.container.y - FROG_LIFT);
+        this.frogShadow.setPosition(this.frogX, this.frogStone.container.y + 12);
         // Carried off the edge — same free reset as a sink.
         if (this.frogX < -20 || this.frogX > W + 20) {
           const s = this.frogStone;
           this.frogStone = null;
           this.sink(s);
         }
+      } else if (!this.hopping) {
+        this.frogShadow.setPosition(this.frog.x, this.frogY() + 12);
       }
     }
   };

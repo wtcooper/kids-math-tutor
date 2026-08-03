@@ -53,19 +53,21 @@ export function GameChrome({
 }) {
   return (
     <main className={styles.wrap}>
+      {/* One compact row: the world below is what gets the screen. The concept is one
+          tap away behind a chip rather than a permanent card — still in the how-to too. */}
       <header className={styles.head}>
-        <div>
+        <div className={styles.headLead}>
           <Link href="/" className={styles.back}>
             ← All topics
           </Link>
           <h1 className={styles.title}>{title}</h1>
           <p className={styles.instructions}>{instructions}</p>
-          <p className={styles.concept}>
-            <span className={styles.conceptLabel}>The maths</span>
-            {concept}
-          </p>
         </div>
         <div className={styles.headActions}>
+          <details className={styles.conceptChip}>
+            <summary>The maths</summary>
+            <p className={styles.conceptPop}>{concept}</p>
+          </details>
           <HowToPlay slug={slug} title={title} concept={concept} howTo={howTo} />
           <Link className="btn sm" href={tutorHref(topicId, { level })}>
             Open in the tutor
@@ -87,9 +89,8 @@ export function GameChrome({
             </button>
           );
         })}
+        {status ? <div className={styles.status}>{status}</div> : null}
       </div>
-
-      {status ? <div className={styles.status}>{status}</div> : null}
 
       {/* The board and the tutor's voice, side by side. The panel wraps underneath on a
           narrow screen rather than squeezing the board. */}

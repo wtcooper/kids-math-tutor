@@ -207,30 +207,53 @@ export default function Beam({ slug, topicId, name, concept, levels, initialLeve
           role="img"
           aria-label={setting ? `Beam split into ${setting} strands` : "Beam, not yet split"}
         >
-          <rect x={0} y={18} width={BEAM_W} height={40} rx={6} fill="#fdf3d8" stroke="#e3cf9b" />
-          {setting
-            ? Array.from({ length: setting }, (_, i) => {
-                // Colour each strand by the machine it has been routed to.
-                let acc = 0;
-                let owner = -1;
-                for (let k = 0; k < given.length; k++) {
-                  if (i >= acc && i < acc + (given[k] ?? 0)) owner = k;
-                  acc += given[k] ?? 0;
-                }
-                return (
-                  <rect
-                    key={i}
-                    x={i * strandW + 1}
-                    y={19}
-                    width={strandW - 2}
-                    height={38}
-                    rx={3}
-                    fill={owner >= 0 ? MACHINE_FILL[owner % MACHINE_FILL.length] : "#fdf3d8"}
-                    stroke={owner >= 0 ? MACHINE_STROKE[owner % MACHINE_STROKE.length] : "#e3cf9b"}
-                  />
-                );
-              })
-            : null}
+          {/* The beam is light: a gold core with a soft bloom, in a dark room. */}
+          <defs>
+            <linearGradient id="beamGold" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#FFEDB8" />
+              <stop offset="50%" stopColor="#FFD873" />
+              <stop offset="100%" stopColor="#E8B23E" />
+            </linearGradient>
+            <filter id="beamGlow" x="-20%" y="-60%" width="140%" height="220%">
+              <feGaussianBlur stdDeviation="6" />
+            </filter>
+          </defs>
+          <rect
+            x={0}
+            y={22}
+            width={BEAM_W}
+            height={32}
+            rx={5}
+            fill="url(#beamGold)"
+            opacity={0.5}
+            filter="url(#beamGlow)"
+          />
+          <rect x={0} y={18} width={BEAM_W} height={40} rx={6} fill="#1a1508" stroke="#3d3418" />
+          {setting ? (
+            Array.from({ length: setting }, (_, i) => {
+              // Colour each strand by the machine it has been routed to.
+              let acc = 0;
+              let owner = -1;
+              for (let k = 0; k < given.length; k++) {
+                if (i >= acc && i < acc + (given[k] ?? 0)) owner = k;
+                acc += given[k] ?? 0;
+              }
+              return (
+                <rect
+                  key={i}
+                  x={i * strandW + 2}
+                  y={20}
+                  width={strandW - 4}
+                  height={36}
+                  rx={3}
+                  fill={owner >= 0 ? MACHINE_FILL[owner % MACHINE_FILL.length] : "url(#beamGold)"}
+                  opacity={owner >= 0 ? 1 : 0.85}
+                />
+              );
+            })
+          ) : (
+            <rect x={2} y={20} width={BEAM_W - 4} height={36} rx={4} fill="url(#beamGold)" />
+          )}
           <text x={0} y={12} className={styles.cap}>
             {setting ? `One beam, cut into ${setting}` : "One beam"}
           </text>
@@ -245,13 +268,28 @@ export default function Beam({ slug, topicId, name, concept, levels, initialLeve
             const has = given[i] ?? 0;
             const satisfied = want !== null && has === want;
             return (
-              <div key={d.name} className={`${styles.machine} ${satisfied ? styles.lit : ""}`}>
+              <div
+                key={d.name}
+                className={`${styles.machine} ${satisfied ? styles.lit : ""}`}
+                style={{ "--m-color": MACHINE_FILL[i % MACHINE_FILL.length] } as React.CSSProperties}
+              >
+                {/* The intake window fills with this machine's light as strands arrive. */}
+                <div className={styles.intake}>
+                  <div
+                    className={styles.intakeFill}
+                    style={{
+                      width: want ? `${Math.min(100, (has / want) * 100)}%` : "0%",
+                      background: MACHINE_FILL[i % MACHINE_FILL.length],
+                    }}
+                  />
+                </div>
                 <div className={styles.machineHead}>
                   <span
                     className={styles.swatch}
                     style={{ background: MACHINE_FILL[i % MACHINE_FILL.length] }}
                   />
                   <span className={styles.machineName}>{d.name}</span>
+                  <span className={styles.wheel} aria-hidden />
                 </div>
                 <div className={styles.wants}>
                   wants{" "}
@@ -341,5 +379,5 @@ export default function Beam({ slug, topicId, name, concept, levels, initialLeve
   );
 }
 
-const MACHINE_FILL = ["#dce7d6", "#f0dcc8", "#e8dbef", "#d9e4ee"];
-const MACHINE_STROKE = ["#8aa683", "#c99a6f", "#a98cb8", "#8ba4bb"];
+/** Each machine's light, saturated enough to glow against the dark room. */
+const MACHINE_FILL = ["#9FD66D", "#6FC3E8", "#E08AA0", "#C9A2F0"];

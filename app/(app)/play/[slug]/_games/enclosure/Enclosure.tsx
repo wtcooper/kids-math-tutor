@@ -162,7 +162,12 @@ export default function Enclosure({
         ) : null
       }
     >
-      <PhaserGame createScenes={createScenes} onEvent={onEvent} busRef={busRef} />
+      <PhaserGame
+        createScenes={createScenes}
+        onEvent={onEvent}
+        busRef={busRef}
+        backgroundColor="#5E8C4A"
+      />
       {result ? (
         <div className={styles.overlay}>
           <div className={`card ${styles.panel}`}>

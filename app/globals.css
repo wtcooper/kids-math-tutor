@@ -176,6 +176,80 @@ a {
   padding: 32px 16px;
 }
 
+/* ---------- game motion ----------
+ * Global keyframes so every game module can share one vocabulary of feedback:
+ * pop for something arriving or succeeding, settle for something landing with weight,
+ * headShake for a silent "not that" (never red, never a penalty), glowPulse for the
+ * thing the player should look at next.
+ */
+
+@keyframes pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes settle {
+  0% {
+    transform: translateY(-14px);
+    opacity: 0;
+  }
+  55% {
+    transform: translateY(2px);
+    opacity: 1;
+  }
+  75% {
+    transform: translateY(-2px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes headShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+  75% {
+    transform: translateX(-2px);
+  }
+}
+
+@keyframes glowPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(206, 148, 48, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(206, 148, 48, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /*
  * Printing shows the worksheet only. The sheet itself is display:none on screen and
  * flipped on inside its own module's print block.

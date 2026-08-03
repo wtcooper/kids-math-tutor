@@ -187,7 +187,12 @@ export default function Crossing({
         </>
       }
     >
-      <PhaserGame createScenes={createScenes} onEvent={onEvent} busRef={busRef} />
+      <PhaserGame
+        createScenes={createScenes}
+        onEvent={onEvent}
+        busRef={busRef}
+        backgroundColor="#173B47"
+      />
       {done ? (
         <div className={styles.overlay}>
           <div className={styles.panel}>
