@@ -18,6 +18,7 @@ export type GameImpl =
   | "orbit"
   | "rapids"
   | "garden"
+  | "depths"
   | "enclosure"
   | "tiles"
   | "cut"
@@ -164,6 +165,19 @@ export const GAMES: readonly GameMeta[] = [
       "Factors of 24 join in",
       "The hard patch — 48s, 8s, 9s",
     ],
+  },
+  {
+    slug: "depths",
+    impl: "depths",
+    name: "The Number Depths",
+    topicId: "factors",
+    blurb:
+      "A mine that remembers you. Beetles carry shield-numbers you crack with divisors, doors eat equal shares, chests pay products — and your floor and coins are saved.",
+    concept:
+      "Division, factors and little equations as survival gear: strike a 84-shell with 7 and it splits to 12; keep going until the core is prime.",
+    focus: "understanding",
+    practises: "Division, factors & equations — an expedition that saves your progress",
+    levelNames: ["The Factor Mines"],
   },
   {
     slug: "enclosure",

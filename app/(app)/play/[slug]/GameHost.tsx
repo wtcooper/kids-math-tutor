@@ -38,6 +38,10 @@ const LOADERS = {
     ssr: false,
     loading: Loading,
   }),
+  depths: dynamic(() => import("./_games/depths/Depths"), {
+    ssr: false,
+    loading: Loading,
+  }),
   enclosure: dynamic(() => import("./_games/enclosure/Enclosure"), {
     ssr: false,
     loading: Loading,

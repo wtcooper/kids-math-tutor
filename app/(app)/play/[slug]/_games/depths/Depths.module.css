@@ -1,0 +1,95 @@
+.pip {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 0.82rem;
+}
+.coin {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--gold-d);
+  background: var(--gold-s);
+  border: 1px solid #e3ce9e;
+  border-radius: 999px;
+  padding: 3px 12px;
+}
+.floorPip {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #6b4f7c;
+  background: #ece2f2;
+  border: 1px solid #cdb8dc;
+  border-radius: 999px;
+  padding: 3px 12px;
+}
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(14, 10, 6, 0.6);
+  border-radius: 18px;
+  padding: 16px;
+  z-index: 5;
+}
+.card {
+  background: var(--paper);
+  border: 1px solid var(--line2);
+  border-radius: 16px;
+  box-shadow: var(--sh2);
+  padding: 20px 26px 18px;
+  text-align: center;
+  max-width: 440px;
+  animation: pop 0.22s ease-out;
+}
+.label {
+  margin: 0 0 8px;
+  font-size: 0.7rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  font-weight: 600;
+}
+.big {
+  margin: 0 0 14px;
+  font-size: 1.15rem;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.big strong { font-family: var(--mono); font-size: 1.35rem }
+
+.inputRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.input {
+  width: 5rem;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 1.3rem;
+  padding: 6px;
+  border: 1px solid var(--line2);
+  border-radius: 10px;
+  background: var(--paper);
+}
+.input:focus { outline: 2px solid var(--clay); outline-offset: 1px }
+
+.log {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--ink2);
+  line-height: 1.7;
+}
+
+.endPanel { max-width: 430px; text-align: left; animation: pop 0.22s ease-out }
+.h2 { font-family: Georgia, serif; font-size: 1.4rem; margin: 0 0 8px }
+.sub { color: var(--ink2); margin: 0 0 16px; line-height: 1.55 }
+.actions { display: flex; gap: 10px; flex-wrap: wrap }

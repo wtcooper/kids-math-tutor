@@ -48,6 +48,11 @@ export const DEMOS: Readonly<Record<string, readonly string[]>> = {
     "Tap a patch of earth and plant a tower. Each tower only zaps numbers its rule matches — multiples, factors, or primes.",
     "Send the wave and watch your plan work. A gnome nothing covers walks right through — plant what is missing, any time.",
   ],
+  depths: [
+    "Walk the mine with the arrow keys or a tap. Your lantern goes with you.",
+    "Walk up to a shield-beetle and strike its shell with a number that divides it — 84 struck with 7 becomes 12. When the core is prime, it shatters and pays.",
+    "Rune doors eat equal shares and chests pay products. Clear the way, find the ladder, and descend — the mine saves your floor and your coins.",
+  ],
   enclosure: [
     "The signboard is the job: fence off exactly this many squares.",
     "Walk the fence one post at a time — tap the next corner, or use the arrow keys.",

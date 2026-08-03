@@ -63,6 +63,7 @@ import {
   makeRun,
   RAPIDS_LEVELS,
 } from "../app/(app)/play/[slug]/_games/rapids/rapids-model";
+import { genFloor, strike } from "../app/(app)/play/[slug]/_games/depths/depths-model";
 import {
   catalogFor,
   makeWave,
@@ -296,6 +297,61 @@ describe("Number Garden Defense", () => {
             ).toBe(false);
           }
         }
+      }
+    }
+  });
+});
+
+describe("The Number Depths", () => {
+  it("every floor is completable: shells composite, door answers whole, chests honest", () => {
+    for (let floor = 1; floor <= 12; floor++) {
+      for (let s = 0; s < 150; s++) {
+        const rand = mulberry32(61000 + s);
+        const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+        const f = genFloor(floor, rnd);
+        for (const shell of f.shells) {
+          expect(splitPair(shell), `floor ${floor}: shell ${shell} unbreakable`).not.toBeNull();
+        }
+        for (const d of f.doors) {
+          expect(Number.isInteger(d.answer)).toBe(true);
+          expect(d.answer).toBeGreaterThanOrEqual(2);
+          if (d.kind === "share") expect(d.bags! * d.answer).toBe(d.total);
+          else expect(d.a! + d.answer).toBe(d.b);
+        }
+        for (const c of f.chests) {
+          expect(c.pouches * c.each).toBe(c.answer);
+        }
+      }
+    }
+  });
+
+  it("striking with true divisors always shatters a shell in finitely many blows", () => {
+    for (let shell = 8; shell <= 96; shell++) {
+      if (splitPair(shell) === null) continue;
+      let v = shell;
+      let guard = 0;
+      while (guard++ < 20) {
+        const pair = splitPair(v);
+        if (!pair) break;
+        const out = strike(v, pair[0]);
+        expect(out.result).not.toBe("bounce");
+        v = out.shell;
+        if (out.result === "shatter") break;
+      }
+      expect(splitPair(v), `${shell} never shattered (stuck at ${v})`).toBeNull();
+    }
+  });
+
+  it("a strike that does not divide always bounces and changes nothing", () => {
+    const rand = mulberry32(777);
+    const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+    for (let i = 0; i < 300; i++) {
+      const shell = rnd(8, 96);
+      const d = rnd(2, 97);
+      const out = strike(shell, d);
+      if (shell % d !== 0 || d >= shell) {
+        expect(out.result).toBe("bounce");
+        expect(out.shell).toBe(shell);
       }
     }
   });
