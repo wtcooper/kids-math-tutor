@@ -16,6 +16,7 @@ import {
   type Node,
   type Op,
   runResults,
+  slotPaths,
   tidyText,
   withOps,
 } from "./machine-model";
@@ -42,14 +43,15 @@ function MachineNode({
   ops,
   selected,
   onSelect,
-  slotIndex,
+  slots,
 }: {
   node: Node;
   path: string;
   ops: (Op | null)[];
   selected: number | null;
   onSelect: (i: number) => void;
-  slotIndex: { current: number };
+  /** Socket index per tree path, from the model — never counted during render. */
+  slots: Record<string, number>;
 }) {
   if (node.kind === "num") return <span className={styles.leaf}>{node.value}</span>;
   if (node.kind === "hopper")
@@ -59,9 +61,9 @@ function MachineNode({
       </span>
     );
 
-  const left = <MachineNode node={node.left} path={`${path}L`} ops={ops} selected={selected} onSelect={onSelect} slotIndex={slotIndex} />;
-  const i = slotIndex.current++;
-  const right = <MachineNode node={node.right} path={`${path}R`} ops={ops} selected={selected} onSelect={onSelect} slotIndex={slotIndex} />;
+  const left = <MachineNode node={node.left} path={`${path}L`} ops={ops} selected={selected} onSelect={onSelect} slots={slots} />;
+  const i = slots[path];
+  const right = <MachineNode node={node.right} path={`${path}R`} ops={ops} selected={selected} onSelect={onSelect} slots={slots} />;
 
   return (
     <span className={styles.node}>
@@ -168,7 +170,7 @@ export default function Machine({ slug, topicId, name, concept, levels, initialL
       : "Work the inner box out first, then use its answer in the outer one. That is all the order of operations is.",
   }), [done, filled, ops.length, puzzle, results]);
   const built = ops.every(Boolean) ? withOps(puzzle.shape, ops) : null;
-  const slotIndex = { current: 0 };
+  const slots = useMemo(() => slotPaths(puzzle.shape), [puzzle]);
 
   return (
     <GameChrome
@@ -218,7 +220,7 @@ export default function Machine({ slug, topicId, name, concept, levels, initialL
               ops={ops}
               selected={selected}
               onSelect={clearSocket}
-              slotIndex={slotIndex}
+              slots={slots}
             />
           </div>
         </div>

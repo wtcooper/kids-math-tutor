@@ -65,6 +65,7 @@ import {
   type Node,
   type Op,
   runResults,
+  slotPaths,
   tidyText,
 } from "../app/(app)/play/[slug]/_games/machine/machine-model";
 import {
@@ -512,6 +513,21 @@ describe("Balance", () => {
 });
 
 describe("The Machine Shop", () => {
+  it("slotPaths numbers every socket exactly once, in withOps order", () => {
+    // Regression: the UI once numbered sockets with a counter mutated during render,
+    // which double-counted under React's dev double-render — the level-1 socket wrote
+    // to ops[1] and the outlet never evaluated. Indexes must come from the tree.
+    for (let level = 1; level <= 4; level++) {
+      for (let s = 0; s < 200; s++) {
+        const rand = mulberry32(21000 + s);
+        const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+        const p = genMachine(level, rnd);
+        const indexes = Object.values(slotPaths(p.shape)).sort((a, b) => a - b);
+        expect(indexes, `L${level}`).toEqual(Array.from({ length: p.slotCount }, (_, i) => i));
+      }
+    }
+  });
+
   it("the wiring the puzzle was built from always solves it", () => {
     for (let level = 1; level <= 4; level++) {
       for (let s = 0; s < 200; s++) {

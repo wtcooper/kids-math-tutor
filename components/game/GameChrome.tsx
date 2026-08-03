@@ -4,6 +4,7 @@ import Link from "next/link";
 import { tutorHref } from "@/lib/topics";
 import { GAME_BY_SLUG } from "@/lib/games";
 import { HowToPlay, type HowTo } from "./HowToPlay";
+import { ShowMe } from "./ShowMe";
 import { WorkingsPanel, type Workings } from "./Workings";
 import styles from "./GameChrome.module.css";
 
@@ -79,6 +80,7 @@ export function GameChrome({
             <summary>The maths</summary>
             <p className={styles.conceptPop}>{concept}</p>
           </details>
+          <ShowMe slug={slug} title={title} />
           <HowToPlay slug={slug} title={title} concept={concept} howTo={howTo} />
           <Link className="btn sm" href={tutorHref(topicId, { level })}>
             Open in the tutor

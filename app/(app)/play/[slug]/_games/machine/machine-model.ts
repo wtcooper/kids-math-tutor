@@ -78,6 +78,28 @@ export interface Puzzle {
   usesHopper: boolean;
 }
 
+/**
+ * Path → slot index, in the exact in-order traversal withOps fills from.
+ *
+ * The UI used to number sockets with a mutable counter incremented *during render*,
+ * which double-counted under React's dev double-render — the one socket on level 1
+ * wrote its operator to ops[1] and the test bench never evaluated. Deriving the index
+ * from the tree keeps the UI and the model in agreement no matter how many times
+ * React chooses to render.
+ */
+export function slotPaths(shape: Node): Record<string, number> {
+  const map: Record<string, number> = {};
+  let i = 0;
+  const walk = (n: Node, path: string): void => {
+    if (n.kind !== "op") return;
+    walk(n.left, `${path}L`);
+    map[path] = i++;
+    walk(n.right, `${path}R`);
+  };
+  walk(shape, "");
+  return map;
+}
+
 /** Replace the operators in a shape, in depth-first order. */
 export function withOps(shape: Node, ops: (Op | null)[]): Node {
   let i = 0;
