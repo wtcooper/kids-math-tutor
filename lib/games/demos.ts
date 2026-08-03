@@ -38,6 +38,11 @@ export const DEMOS: Readonly<Record<string, readonly string[]>> = {
     "Line up and fire. A shell only splits a rock its prime divides — 3 splits 51, and a wrong shell just glances off for free.",
     "Every split pulls that prime out of the rock. Keep firing until nothing is left but primes.",
   ],
+  rapids: [
+    "The river carries you toward rock gates. The banner says which opening is safe — here, the next number in the count.",
+    "Steer with your finger, the mouse, or the arrow keys. Slip through the right opening and the river speeds up a little.",
+    "The wrong opening just spins the raft — free — and the water calms down while you recover. Twelve gates make a run.",
+  ],
   enclosure: [
     "The signboard is the job: fence off exactly this many squares.",
     "Walk the fence one post at a time — tap the next corner, or use the arrow keys.",

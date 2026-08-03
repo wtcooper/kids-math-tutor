@@ -30,6 +30,10 @@ const LOADERS = {
   }),
   split: dynamic(() => import("./_games/split/Split"), { ssr: false, loading: Loading }),
   orbit: dynamic(() => import("./_games/orbit/Orbit"), { ssr: false, loading: Loading }),
+  rapids: dynamic(() => import("./_games/rapids/Rapids"), {
+    ssr: false,
+    loading: Loading,
+  }),
   enclosure: dynamic(() => import("./_games/enclosure/Enclosure"), {
     ssr: false,
     loading: Loading,

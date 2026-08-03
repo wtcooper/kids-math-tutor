@@ -1,0 +1,41 @@
+.pip {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 0.82rem;
+}
+.soft { color: var(--ink3); font-size: 0.82rem }
+.good {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--sage-d);
+  background: var(--sage-s);
+  border: 1px solid #cfe0ca;
+  border-radius: 999px;
+  padding: 3px 12px;
+}
+.streak {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--gold-d);
+  background: var(--gold-s);
+  border: 1px solid #e3ce9e;
+  border-radius: 999px;
+  padding: 3px 12px;
+  animation: pop 0.25s ease-out;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(18, 38, 46, 0.6);
+  border-radius: 18px;
+  padding: 16px;
+}
+.panel { max-width: 430px; animation: pop 0.22s ease-out }
+.h2 { font-family: Georgia, serif; font-size: 1.45rem; margin: 0 0 6px }
+.sub { color: var(--ink2); margin: 0 0 18px; line-height: 1.55 }
+.actions { display: flex; gap: 10px; flex-wrap: wrap }

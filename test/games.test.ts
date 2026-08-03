@@ -59,6 +59,11 @@ import {
   solvedValue,
 } from "../app/(app)/play/[slug]/_games/balance/balance-model";
 import {
+  makeGate,
+  makeRun,
+  RAPIDS_LEVELS,
+} from "../app/(app)/play/[slug]/_games/rapids/rapids-model";
+import {
   ALL_OPS,
   genMachine,
   machineWorks,
@@ -200,6 +205,55 @@ describe("Split", () => {
   it("a rock offers an equal break exactly when it is composite", () => {
     for (let n = 2; n <= 200; n++) {
       expect(equalBreaks(n).length > 0, `${n}`).toBe(splitPair(n) !== null);
+    }
+  });
+});
+
+describe("Rapids", () => {
+  it("every gate has exactly one correct opening, for every level kind", () => {
+    for (const { kind } of RAPIDS_LEVELS) {
+      for (let s = 0; s < 300; s++) {
+        const rand = mulberry32(31000 + s);
+        const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+        let state = makeRun(kind, rnd);
+        for (let g = 0; g < 14; g++) {
+          const out = makeGate(state, rnd);
+          state = out.state;
+          const { sides, correct, meta } = out.gate;
+          expect(sides[0], `${kind}: sides must differ`).not.toBe(sides[1]);
+          if (kind === "count-easy" || kind === "count-hard") {
+            const next = meta.next as number;
+            expect(Number(sides[correct]), kind).toBe(next);
+            expect(Number(sides[1 - correct]), `${kind}: distractor equals answer`).not.toBe(next);
+          } else if (kind === "frac-compare") {
+            const [an, ad] = sides[correct].split("/").map(Number);
+            const [bn, bd] = sides[1 - correct].split("/").map(Number);
+            expect(an * bd, `${kind}: ${sides.join(" vs ")}`).toBeGreaterThan(bn * ad);
+          } else {
+            const [tn, td] = (meta.target as string).split("/").map(Number);
+            const [cn, cd] = sides[correct].split("/").map(Number);
+            const [wn, wd] = sides[1 - correct].split("/").map(Number);
+            expect(cn * td, `${kind}: match must equal target`).toBe(tn * cd);
+            expect(wn * td, `${kind}: distractor must NOT equal target`).not.toBe(tn * wd);
+          }
+        }
+      }
+    }
+  });
+
+  it("counting runs never step outside the 1–12 table", () => {
+    for (const kind of ["count-easy", "count-hard"] as const) {
+      const rand = mulberry32(4242);
+      const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+      let state = makeRun(kind, rnd);
+      for (let g = 0; g < 60; g++) {
+        const out = makeGate(state, rnd);
+        state = out.state;
+        const next = out.gate.meta.next as number;
+        const base = out.gate.meta.base as number;
+        expect(next % base).toBe(0);
+        expect(next / base).toBeLessThanOrEqual(12);
+      }
     }
   });
 });

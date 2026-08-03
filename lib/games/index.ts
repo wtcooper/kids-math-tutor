@@ -16,6 +16,7 @@ export type GameImpl =
   | "munchers"
   | "split"
   | "orbit"
+  | "rapids"
   | "enclosure"
   | "tiles"
   | "cut"
@@ -126,6 +127,24 @@ export const GAMES: readonly GameMeta[] = [
       "Divisibility: does 3 go into 51? Firing is the question — a shell only splits a rock its prime divides, down to nothing but primes.",
     focus: "fluency",
     practises: "Division & primes — divisibility rules, at speed",
+  },
+  {
+    slug: "rapids",
+    impl: "rapids",
+    name: "Rapids",
+    topicId: "facts-mul",
+    blurb:
+      "The river never stops. Steer the raft through the opening that continues the count — or holds the bigger fraction.",
+    concept:
+      "Skip counting on the move, then comparing fractions: the raft goes through the next number in the table, the bigger fraction, or the equal one.",
+    focus: "fluency",
+    practises: "Multiplication & fractions — sequences and comparing, on the move",
+    levelNames: [
+      "The count — friendly tables",
+      "The count — the hard tables",
+      "The bigger fraction",
+      "Match the fraction",
+    ],
   },
   {
     slug: "enclosure",
