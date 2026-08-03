@@ -46,6 +46,11 @@ export interface GameMeta {
    * difference between "get faster" and "see why" is visible before she commits.
    */
   focus: "fluency" | "understanding";
+  /**
+   * The practice area in one glance: broad domain, then the specific skill. Always
+   * visible at the top of the game page — the concept sentence explains, this names.
+   */
+  practises: string;
   /** Lets one implementation serve several games. */
   variant?: string;
   /**
@@ -70,6 +75,7 @@ export const GAMES: readonly GameMeta[] = [
     concept:
       "Skip counting through a times table in order — 3, 6, 9, 12. Knowing a number is a multiple is not enough; you need the one that comes next.",
     focus: "fluency",
+    practises: "Multiplication — times tables, skip counting in order",
     variant: "mul",
   },
   {
@@ -82,6 +88,7 @@ export const GAMES: readonly GameMeta[] = [
     concept:
       "Listing what divides a number, smallest first — the question behind every division fact: does this go in exactly?",
     focus: "fluency",
+    practises: "Division — the factors of a number, smallest first",
     variant: "div",
   },
   {
@@ -93,6 +100,7 @@ export const GAMES: readonly GameMeta[] = [
     concept:
       "Factors, multiples, primes, and the greatest common factor of two numbers.",
     focus: "fluency",
+    practises: "Multiplication & division — factors, multiples, primes, GCF",
   },
   {
     slug: "split",
@@ -100,10 +108,11 @@ export const GAMES: readonly GameMeta[] = [
     name: "Split",
     topicId: "factors",
     blurb:
-      "Shoot a rock and it breaks into two factors. Primes will not break — so you have to fly around what you made.",
+      "Shoot a rock and say how it shatters into equal rocks — 12 into three 4s, then each 4 into two 2s. Primes will not break, so you have to fly around what you made.",
     concept:
-      "Prime factorization. 36 → 4 × 9 → 2 × 2 × 3 × 3 — a factor tree, one split at a time.",
+      "Factors and primes by sharing: every break is a division that comes out exact — 12 ÷ 3 = 4, so 12 is three 4s — down until only primes are left.",
     focus: "understanding",
+    practises: "Division & primes — breaking a number into equal parts",
   },
   {
     slug: "enclosure",
@@ -115,6 +124,7 @@ export const GAMES: readonly GameMeta[] = [
     concept:
       "Area against perimeter: the squares inside versus the distance around, and why 12 squares can cost 14 fence or 26.",
     focus: "understanding",
+    practises: "Geometry — area and perimeter",
     levelNames: [
       "Small fields",
       "Watch the fence",
@@ -132,6 +142,7 @@ export const GAMES: readonly GameMeta[] = [
     concept:
       "The distributive property. 23 × 14 = (20 + 3) × (10 + 4) = 200 + 80 + 30 + 12 — you work out each part yourself.",
     focus: "understanding",
+    practises: "Multiplication — multi-digit, the distributive property",
     levelNames: [
       "Teens × teens",
       "Up to 24 × 14",
@@ -149,6 +160,7 @@ export const GAMES: readonly GameMeta[] = [
     concept:
       "Equivalent fractions and simplifying: 3/4 = 6/8 = 9/12, all the same width of wall.",
     focus: "understanding",
+    practises: "Fractions — equivalent fractions and simplifying",
     levelNames: ["Halves & quarters", "Sixths & eighths", "Twelfths", "Sixteenths & more"],
   },
   {
@@ -161,6 +173,7 @@ export const GAMES: readonly GameMeta[] = [
     concept:
       "Adding fractions with different denominators — 1/4 + 2/3 needs twelfths before it can be added at all.",
     focus: "understanding",
+    practises: "Fractions — adding with unlike denominators",
     levelNames: ["Two machines", "Trickier pairs", "Awkward pairs", "Three machines"],
   },
   {
@@ -173,6 +186,7 @@ export const GAMES: readonly GameMeta[] = [
     concept:
       "Solving equations: 4x + 5 = 3x + 13, by doing the same thing to both sides until x is alone.",
     focus: "understanding",
+    practises: "Algebra — solving equations for x",
     levelNames: ["x + a = b", "n bags", "n bags and stones", "Bags on both sides"],
   },
   {
@@ -185,6 +199,7 @@ export const GAMES: readonly GameMeta[] = [
     concept:
       "Order of operations, then variables — an expression that has to give the right answer for every n, not just one.",
     focus: "understanding",
+    practises: "Arithmetic — order of operations, then variables",
     levelNames: [
       "One operator",
       "Two operators",
@@ -202,6 +217,7 @@ export const GAMES: readonly GameMeta[] = [
     concept:
       "Unit rates (price per pound), percent markup, and percent off.",
     focus: "understanding",
+    practises: "Percents & division — unit rates, markup, discounts",
     levelNames: ["Two sacks", "More markups", "Three sacks", "Tight margins"],
   },
   {
@@ -214,6 +230,7 @@ export const GAMES: readonly GameMeta[] = [
     concept:
       "Area, volume and scale: floor area, blocks in a box, and a plan enlarged by a ratio.",
     focus: "understanding",
+    practises: "Geometry — area, volume and scale",
     levelNames: ["Floors", "Silos", "Anything goes", "Tight commissions"],
   },
 ];

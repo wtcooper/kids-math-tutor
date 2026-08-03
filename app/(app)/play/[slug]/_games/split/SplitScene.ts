@@ -91,11 +91,20 @@ export function splitPair(n: number): [number, number] | null {
   return null;
 }
 
-/** Every way to write n as a product of two factors above 1, smallest factor first. */
-export function factorPairs(n: number): [number, number][] {
+/**
+ * Every way to break n into **equal rocks**: (count, size) with both ≥ 2, count
+ * ascending. 12 → two 6s, three 4s, four 3s, six 2s.
+ *
+ * This replaced the factor-pair break after play-testing: "8 breaks into 2 × 4" reads
+ * as arbitrary — the mind expects a big rock to shatter into equal pieces ("8 is two
+ * fours"). Equal pieces is division as sharing, both orderings of a pair are offered
+ * because two 6s and six 2s are genuinely different physical outcomes, and repeated
+ * breaking still lands on exactly the prime factorisation.
+ */
+export function equalBreaks(n: number): [number, number][] {
   const out: [number, number][] = [];
-  for (let d = 2; d * d <= n; d++) {
-    if (n % d === 0) out.push([d, n / d]);
+  for (let count = 2; count * 2 <= n; count++) {
+    if (n % count === 0) out.push([count, n / count]);
   }
   return out;
 }
@@ -343,7 +352,7 @@ export function createSplitScene(P: typeof Phaser, config: { level: number }) {
         type: "state",
         payload: {
           asking: this.pending ? this.pending.value : null,
-          pairs: this.pending ? factorPairs(this.pending.value) : [],
+          breaks: this.pending ? equalBreaks(this.pending.value) : [],
           started: [...this.startedWith],
           left: this.rocks.filter((r) => !r.dead && !r.prime).length,
           primes: this.rocks
@@ -578,18 +587,19 @@ export function createSplitScene(P: typeof Phaser, config: { level: number }) {
     }
 
     /**
-     * She has named a factor pair for the rock she shot. Called from the host, because
-     * the question is rendered in HTML — a number pad in a canvas is a bad number pad.
+     * She has said how the rock shatters — `count` equal rocks of `size`. Called from
+     * the host, because the question is rendered in HTML — a number pad in a canvas is
+     * a bad number pad.
      */
-    answerSplit(a: number, b: number) {
+    answerBreak(count: number, size: number) {
       const rock = this.pending;
       if (!rock || rock.dead) return;
-      const ok = a > 1 && b > 1 && a * b === rock.value;
+      const ok = count > 1 && size > 1 && count * size === rock.value;
 
       this.bus.emit({
         type: "attempt",
         prompt: { n: rock.value, prime: false },
-        response: { shot: true, split: ok, into: ok ? [a, b] : null },
+        response: { shot: true, split: ok, into: ok ? { count, size } : null },
         elapsedMs: Math.max(0, Math.round(this.time.now - this.askedAt)),
       });
       this.askedAt = this.time.now;
@@ -602,13 +612,25 @@ export function createSplitScene(P: typeof Phaser, config: { level: number }) {
       const { x, y } = rock.container;
       rock.container.destroy();
 
-      // The break is the biggest beat in the game: burst, kick, children tumble out.
+      // The break is the biggest beat in the game: burst, kick, the pieces tumble out.
       this.burst(x, y, ROCK_EDGE, 14, 90);
       this.burst(x, y, TRACER, 6, 55);
       if (!this.calmMotion) this.cameras.main.shake(90, 0.004);
 
-      this.addRock(a, x - 44, y - 10, true);
-      this.addRock(b, x + 44, y + 10, true);
+      // The pieces fan out in rings of up to 8, so "six 2s" looks like six real rocks
+      // sharing the space the big one held — the equal share, drawn.
+      for (let i = 0; i < count; i++) {
+        const ring = Math.floor(i / 8);
+        const inRing = Math.min(8, count - ring * 8);
+        const angle = ((i % 8) / inRing) * Math.PI * 2 + ring * 0.4;
+        const radius = 48 + ring * 52 + (count > 4 ? 10 : 0);
+        this.addRock(
+          size,
+          Math.max(30, Math.min(W - 30, x + Math.cos(angle) * radius)),
+          Math.max(30, Math.min(H - 150, y + Math.sin(angle) * radius * 0.7)),
+          true,
+        );
+      }
       this.pushState();
 
       if (this.rocks.filter((r) => !r.dead && !r.prime).length === 0) this.complete();

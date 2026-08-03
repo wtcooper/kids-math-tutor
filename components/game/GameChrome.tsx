@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { tutorHref } from "@/lib/topics";
+import { GAME_BY_SLUG } from "@/lib/games";
 import { HowToPlay, type HowTo } from "./HowToPlay";
 import { WorkingsPanel, type Workings } from "./Workings";
 import styles from "./GameChrome.module.css";
@@ -51,8 +52,18 @@ export function GameChrome({
   workingsKey?: unknown;
   children: React.ReactNode;
 }) {
+  // What this game practises, named at a glance — domain first, then the skill.
+  // Looked up here rather than threaded through every game component.
+  const practises = GAME_BY_SLUG[slug]?.practises;
+
   return (
     <main className={styles.wrap}>
+      {practises ? (
+        <p className={styles.practises}>
+          <span className={styles.practisesLabel}>Practising</span>
+          {practises}
+        </p>
+      ) : null}
       {/* One compact row: the world below is what gets the screen. The concept is one
           tap away behind a chip rather than a permanent card — still in the how-to too. */}
       <header className={styles.head}>

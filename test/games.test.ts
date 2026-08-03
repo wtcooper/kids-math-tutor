@@ -15,6 +15,7 @@ import {
 import { mulberry32 } from "@/lib/math/rng";
 import {
   primeFactorCount,
+  equalBreaks,
   splitPair,
   startingNumbers,
 } from "../app/(app)/play/[slug]/_games/split/SplitScene";
@@ -164,22 +165,40 @@ describe("Split", () => {
     }
   });
 
-  it("splitting repeatedly always terminates in primes whose product is the original", () => {
-    for (let n = 4; n <= 200; n++) {
-      let pile = [n];
-      let guard = 0;
-      while (pile.some((v) => splitPair(v)) && guard++ < 100) {
-        const next: number[] = [];
-        for (const v of pile) {
-          const pair = splitPair(v);
-          if (pair) next.push(pair[0], pair[1]);
-          else next.push(v);
+  it("breaking into equal pieces, by ANY offered choice, always terminates in primes without losing a unit", () => {
+    // Equal-piece breaking is division as sharing: a rock of 12 into three 4s keeps
+    // 12 units on the board (3 × 4), so the invariant is the SUM of the rocks, not the
+    // product — the factors she names are the counts, one per break. Walk every n
+    // twice — always taking the first break and always the last — so both extremes of
+    // her choices (fewest big pieces, most small pieces) are exercised.
+    for (const pick of [0, -1]) {
+      for (let n = 4; n <= 200; n++) {
+        let pile = [n];
+        let guard = 0;
+        while (pile.some((v) => equalBreaks(v).length > 0) && guard++ < 100) {
+          const next: number[] = [];
+          for (const v of pile) {
+            const options = equalBreaks(v);
+            if (options.length === 0) {
+              next.push(v);
+              continue;
+            }
+            const [count, size] = options.at(pick)!;
+            for (let i = 0; i < count; i++) next.push(size);
+          }
+          pile = next;
         }
-        pile = next;
+        expect(pile.every((v) => equalBreaks(v).length === 0), `${n} left a composite`).toBe(true);
+        expect(pile.reduce((a, b) => a + b, 0), `${n} lost units`).toBe(n);
+        // Every final rock is genuinely prime — that is the whole destination.
+        expect(pile.every((v) => splitPair(v) === null), `${n} ended non-prime`).toBe(true);
       }
-      expect(pile.every((v) => splitPair(v) === null), `${n} left a composite`).toBe(true);
-      expect(pile.reduce((a, b) => a * b, 1), `${n} lost value`).toBe(n);
-      expect(pile.length, `${n}`).toBe(primeFactorCount(n));
+    }
+  });
+
+  it("a rock offers an equal break exactly when it is composite", () => {
+    for (let n = 2; n <= 200; n++) {
+      expect(equalBreaks(n).length > 0, `${n}`).toBe(splitPair(n) !== null);
     }
   });
 });

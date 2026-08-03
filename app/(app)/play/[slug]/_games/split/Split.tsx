@@ -13,9 +13,9 @@ import type { GameProps } from "../../GameHost";
 import { createSplitScene } from "./SplitScene";
 import styles from "./Split.module.css";
 
-/** Just enough of the scene's shape to answer the factor question from React. */
+/** Just enough of the scene's shape to answer the break question from React. */
 interface SplitSceneLike {
-  answerSplit(a: number, b: number): void;
+  answerBreak(count: number, size: number): void;
   cancelSplit(): void;
 }
 interface PhaserGameLike {
@@ -27,11 +27,11 @@ const HOW_TO: HowTo = {
   controls: [
     "Move your finger or the mouse and the ship follows underneath.",
     "Tap or click to shoot straight up from where the ship is.",
-    "Then pick the two factors, or type one and the other follows.",
+    "Then say how it shatters — into equal rocks, like three 4s from a 12.",
     "Keyboard: hold ← → to fly, space to shoot.",
   ],
   rules: [
-    "Shoot a rock and you have to say what it breaks into — two numbers that multiply to make it.",
+    "A rock always breaks into equal pieces: 12 can be two 6s, three 4s, four 3s or six 2s.",
     "A prime cannot be split — the shot bounces off and it stays in your way.",
     "So the board fills up with the primes you made. That pile is the answer.",
     "No timer, and nothing can hurt you.",
@@ -39,13 +39,24 @@ const HOW_TO: HowTo = {
 };
 
 interface Live {
-  /** The rock she has shot and must factorise, or null when flying. */
+  /** The rock she has shot and must break, or null when flying. */
   asking: number | null;
-  pairs: [number, number][];
+  /** Every equal break of the asked rock: (how many, of what). */
+  breaks: [number, number][];
   started: number[];
   left: number;
   primes: number[];
   splits: number;
+}
+
+/** "two 6s", "three 4s", "24 twos" — the way you would say it out loud. */
+const COUNT_WORDS = [
+  "", "", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+  "eleven", "twelve",
+];
+function breakLabel(count: number, size: number): string {
+  const word = COUNT_WORDS[count] ?? String(count);
+  return `${word} ${size}s`;
 }
 
 interface Result {
@@ -133,17 +144,17 @@ export default function Split({
     return host?.__phaserGame?.scene.getScene("split") as SplitSceneLike | undefined;
   };
 
-  const submitPair = useCallback(
-    (a: number, b: number) => {
+  const submitBreak = useCallback(
+    (count: number, size: number) => {
       const s = scene();
       if (!s) return;
-      if (a * b !== (live?.asking ?? 0)) {
+      if (count * size !== (live?.asking ?? 0)) {
         setWrong(true);
         return;
       }
       setWrong(false);
       setGuess("");
-      s.answerSplit(a, b);
+      s.answerBreak(count, size);
     },
     [live],
   );
@@ -152,17 +163,18 @@ export default function Split({
     if (!live) return { now: "Getting the rocks ready…" };
     if (live.asking) {
       return {
-        now: `What two numbers multiply to make ${live.asking}?`,
-        listTitle: "Try them in turn",
-        lines: [2, 3, 4, 5, 6, 7]
-          .filter((d) => d * d <= live.asking!)
+        now: `How many equal rocks can ${live.asking} shatter into?`,
+        listTitle: "Try sharing it out",
+        lines: [2, 3, 4, 5, 6]
+          .filter((d) => d * 2 <= live.asking!)
           .map((d) => ({
-            text: `${live.asking} ÷ ${d} = ${
-              live.asking! % d === 0 ? live.asking! / d : "not exact"
-            }`,
+            text:
+              live.asking! % d === 0
+                ? `${live.asking} ÷ ${d} = ${live.asking! / d} → ${breakLabel(d, live.asking! / d)}`
+                : `${live.asking} ÷ ${d} = not exact`,
             state: (live.asking! % d === 0 ? "current" : "todo") as "current" | "todo",
           })),
-        hint: `Go up through 2, 3, 4, 5… and stop at the first one that divides ${live.asking} exactly. Both halves must be bigger than 1.`,
+        hint: `Share ${live.asking} into 2, then 3, then 4… equal piles. Every share that comes out exact is a real break — and every one ends at the same primes.`,
       };
     }
     return {
@@ -185,7 +197,7 @@ export default function Split({
       levels={levels}
       level={level}
       onLevel={changeLevel}
-      instructions="Line up under a rock and shoot, then say what two numbers it breaks into."
+      instructions="Line up under a rock and shoot, then say how it shatters — into equal rocks."
       howTo={HOW_TO}
       workings={workings}
       workingsKey={live?.asking ?? "flying"}
@@ -213,50 +225,58 @@ export default function Split({
         <div className={styles.askScrim}>
           <div className={`card ${styles.ask}`}>
             <p className={styles.askQ}>
-              <strong>{live.asking}</strong> breaks into…
+              <strong>{live.asking}</strong> shatters into…
             </p>
             <div className={styles.pairs}>
-              {live.pairs.map(([a, b]) => (
+              {live.breaks.map(([count, size]) => (
                 <button
-                  key={`${a}x${b}`}
+                  key={`${count}x${size}`}
                   type="button"
                   className={styles.pair}
-                  onClick={() => submitPair(a, b)}
+                  onClick={() => submitBreak(count, size)}
                 >
-                  {a} × {b}
+                  <span className={styles.pairWords}>{breakLabel(count, size)}</span>
+                  <span className={styles.pairMath}>
+                    {count} × {size} = {live.asking}
+                  </span>
                 </button>
               ))}
             </div>
             <div className={styles.typeRow}>
-              <span className={styles.typeLabel}>or type one factor</span>
+              <span className={styles.typeLabel}>or type how many pieces</span>
               <input
                 className={styles.typed}
                 inputMode="numeric"
                 value={guess}
                 placeholder="?"
-                aria-label={`A factor of ${live.asking}`}
+                aria-label={`How many equal pieces to break ${live.asking} into`}
                 onChange={(e) => {
                   setGuess(e.target.value.replace(/[^\d]/g, "").slice(0, 4));
                   setWrong(false);
                 }}
                 onKeyDown={(e) => {
                   if (e.key !== "Enter") return;
-                  const a = Number(guess);
-                  if (!a || a < 2 || live.asking! % a !== 0 || a === live.asking) {
+                  const k = Number(guess);
+                  if (!k || k < 2 || live.asking! % k !== 0 || live.asking! / k < 2) {
                     setWrong(true);
                     return;
                   }
-                  submitPair(a, live.asking! / a);
+                  submitBreak(k, live.asking! / k);
                 }}
               />
-              {guess && live.asking % Number(guess) === 0 && Number(guess) > 1 ? (
-                <span className={styles.other}>× {live.asking / Number(guess)}</span>
+              {guess &&
+              Number(guess) >= 2 &&
+              live.asking % Number(guess) === 0 &&
+              live.asking / Number(guess) >= 2 ? (
+                <span className={styles.other}>
+                  → {breakLabel(Number(guess), live.asking / Number(guess))}
+                </span>
               ) : null}
             </div>
             {wrong ? (
               <p className={styles.askWrong}>
-                That does not divide {live.asking} exactly. Both halves have to be whole
-                numbers bigger than 1.
+                {live.asking} does not share into that many equal whole pieces — and
+                pieces of 1 don&apos;t count.
               </p>
             ) : null}
           </div>
@@ -267,7 +287,8 @@ export default function Split({
           <div className={`card ${styles.panel}`}>
             <h2 className={styles.h2}>Nothing left but primes</h2>
             <p className={styles.sub}>
-              That pile of rocks is the prime factorisation of what you started with.
+              Every rock is prime now — nothing left will share into equal pieces.
+              Written the tutor&apos;s way, the breaks you chose are these factors:
             </p>
             <div className={styles.trees}>
               {result.started.map((n, i) => (

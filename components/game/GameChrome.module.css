@@ -4,6 +4,22 @@
   padding: 20px 18px 48px;
 }
 
+/* Always-visible, one line: the practice area this game serves. */
+.practises {
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+  color: var(--gold-d);
+  font-weight: 600;
+}
+.practisesLabel {
+  font-size: 0.64rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  font-weight: 600;
+  margin-right: 8px;
+}
+
 .head {
   display: flex;
   justify-content: space-between;

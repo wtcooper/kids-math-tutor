@@ -129,6 +129,9 @@
   background: rgba(38, 29, 20, 0.6);
   border-radius: 18px;
   padding: 16px;
+  /* Above the piece inputs — .regionBody carries z-index: 1, and without this the
+     inputs painted over the panel and swallowed the taps meant for its buttons. */
+  z-index: 10;
 }
 .panel { max-width: 460px }
 .h2 { font-family: Georgia, serif; font-size: 1.45rem; margin: 0 0 14px }
