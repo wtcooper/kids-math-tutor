@@ -17,6 +17,7 @@ export type GameImpl =
   | "split"
   | "orbit"
   | "rapids"
+  | "garden"
   | "enclosure"
   | "tiles"
   | "cut"
@@ -144,6 +145,24 @@ export const GAMES: readonly GameMeta[] = [
       "The count — the hard tables",
       "The bigger fraction",
       "Match the fraction",
+    ],
+  },
+  {
+    slug: "garden",
+    impl: "garden",
+    name: "Number Garden Defense",
+    topicId: "factors",
+    blurb:
+      "Gnomes carrying numbers march at your vegetables. Plant towers whose rules catch them — a primes flower ignores a 24 completely.",
+    concept:
+      "Classifying at speed: multiples, factors and primes as tower rules. Reading the wave and planting what covers it is the whole game.",
+    focus: "fluency",
+    practises: "Multiplication & division — factors, multiples and primes as defenses",
+    levelNames: [
+      "First tools — 2s, 3s, 5s and primes",
+      "New tables — 3s, 4s, 6s",
+      "Factors of 24 join in",
+      "The hard patch — 48s, 8s, 9s",
     ],
   },
   {

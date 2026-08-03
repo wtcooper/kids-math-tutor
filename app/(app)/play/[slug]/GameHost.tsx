@@ -34,6 +34,10 @@ const LOADERS = {
     ssr: false,
     loading: Loading,
   }),
+  garden: dynamic(() => import("./_games/garden/Garden"), {
+    ssr: false,
+    loading: Loading,
+  }),
   enclosure: dynamic(() => import("./_games/enclosure/Enclosure"), {
     ssr: false,
     loading: Loading,

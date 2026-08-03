@@ -64,6 +64,13 @@ import {
   RAPIDS_LEVELS,
 } from "../app/(app)/play/[slug]/_games/rapids/rapids-model";
 import {
+  catalogFor,
+  makeWave,
+  satisfies as gardenSatisfies,
+  stoppers,
+  WAVES_PER_ROUND,
+} from "../app/(app)/play/[slug]/_games/garden/garden-model";
+import {
   ALL_OPS,
   genMachine,
   machineWorks,
@@ -253,6 +260,42 @@ describe("Rapids", () => {
         const base = out.gate.meta.base as number;
         expect(next % base).toBe(0);
         expect(next / base).toBeLessThanOrEqual(12);
+      }
+    }
+  });
+});
+
+describe("Number Garden Defense", () => {
+  it("every gnome in every wave is stoppable by some tower in the level's catalog", () => {
+    for (let level = 1; level <= 4; level++) {
+      for (let s = 0; s < 200; s++) {
+        const rand = mulberry32(51000 + s);
+        const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+        for (let wave = 1; wave <= WAVES_PER_ROUND; wave++) {
+          for (const v of makeWave(level, wave, rnd)) {
+            expect(v).toBeGreaterThanOrEqual(2);
+            expect(v).toBeLessThanOrEqual(99);
+            expect(stoppers(level, v).length, `L${level} w${wave}: ${v} unstoppable`).toBeGreaterThan(0);
+          }
+        }
+      }
+    }
+  });
+
+  it("from wave 2 on, no single tower rule covers a whole wave", () => {
+    for (let level = 1; level <= 4; level++) {
+      for (let s = 0; s < 200; s++) {
+        const rand = mulberry32(53000 + s);
+        const rnd = (a: number, b: number) => a + Math.floor(rand() * (b - a + 1));
+        for (let wave = 2; wave <= WAVES_PER_ROUND; wave++) {
+          const values = makeWave(level, wave, rnd);
+          for (const spec of catalogFor(level)) {
+            expect(
+              values.every((v) => gardenSatisfies(spec, v)),
+              `L${level} w${wave}: "${spec.label}" alone covers ${values}`,
+            ).toBe(false);
+          }
+        }
       }
     }
   });

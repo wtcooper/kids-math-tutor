@@ -43,6 +43,11 @@ export const DEMOS: Readonly<Record<string, readonly string[]>> = {
     "Steer with your finger, the mouse, or the arrow keys. Slip through the right opening and the river speeds up a little.",
     "The wrong opening just spins the raft — free — and the water calms down while you recover. Twelve gates make a run.",
   ],
+  garden: [
+    "Read the wave before you send it: these numbers are coming for your vegetables.",
+    "Tap a patch of earth and plant a tower. Each tower only zaps numbers its rule matches — multiples, factors, or primes.",
+    "Send the wave and watch your plan work. A gnome nothing covers walks right through — plant what is missing, any time.",
+  ],
   enclosure: [
     "The signboard is the job: fence off exactly this many squares.",
     "Walk the fence one post at a time — tap the next corner, or use the arrow keys.",
