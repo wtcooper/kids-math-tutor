@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { tutorHref } from "@/lib/topics";
 import { GAME_BY_SLUG } from "@/lib/games";
@@ -7,6 +8,13 @@ import type { HowTo } from "./HowToPlay";
 import { ShowMe } from "./ShowMe";
 import { WorkingsPanel, type Workings } from "./Workings";
 import styles from "./GameChrome.module.css";
+
+const STAGE_TOAST: Record<string, (name: string) => string> = {
+  egg: (n) => `You found an egg! A ${n} is growing in it.`,
+  hatchling: (n) => `Your ${n} hatched!`,
+  grown: (n) => `Your ${n} is fully grown!`,
+  elder: (n) => `Your ${n} became an elder!`,
+};
 
 /**
  * Everything around the canvas: level picker, instructions, the way back.
@@ -56,6 +64,23 @@ export function GameChrome({
   // What this game practises, named at a glance — domain first, then the skill.
   // Looked up here rather than threaded through every game component.
   const practises = GAME_BY_SLUG[slug]?.practises;
+
+  // The Beast Book celebrates from wherever she is playing: practice in this game just
+  // hatched or grew that topic's creature.
+  const [toast, setToast] = useState<string | null>(null);
+  useEffect(() => {
+    const onStage = (e: Event) => {
+      const { name, stage } = (e as CustomEvent<{ name: string; stage: string }>).detail;
+      setToast(STAGE_TOAST[stage]?.(name) ?? null);
+    };
+    window.addEventListener("beast:stage", onStage);
+    return () => window.removeEventListener("beast:stage", onStage);
+  }, []);
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 5000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   return (
     <main className={styles.wrap}>
@@ -117,6 +142,12 @@ export function GameChrome({
       <div className={styles.rotate}>
         <p>Turn your phone sideways to play.</p>
       </div>
+
+      {toast ? (
+        <Link href="/beasts" className={styles.beastToast}>
+          <span aria-hidden>✦</span> {toast} <span className={styles.beastToastGo}>Beast Book →</span>
+        </Link>
+      ) : null}
     </main>
   );
 }

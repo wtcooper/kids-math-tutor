@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { AuthExpiredError, beaconJson, postJson } from "@/lib/api-client";
+import { feedBeast } from "@/lib/beasts";
+import { GAME_BY_SLUG } from "@/lib/games";
 import type { GameEvent } from "./PhaserGame";
 
 /**
@@ -84,9 +86,12 @@ export function useAttemptRecorder({ gameSlug, level }: Options) {
         response: e.response,
         elapsedMs: e.elapsedMs,
       });
+      // Every attempt, in any game, feeds that topic's creature in the Beast Book.
+      const topicId = GAME_BY_SLUG[gameSlug]?.topicId;
+      if (topicId) feedBeast(topicId);
       void openSession();
     },
-    [openSession],
+    [openSession, gameSlug],
   );
 
   const flush = useCallback(async () => {

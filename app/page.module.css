@@ -226,6 +226,18 @@
 
 /* ---------- games ---------- */
 .gamesHead { display:flex; align-items:baseline; gap:10px; margin:6px 0 4px }
+.beastLink {
+  margin-left: auto;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--gold-d);
+  background: var(--gold-s);
+  border: 1px solid #e3ce9e;
+  border-radius: 999px;
+  padding: 4px 14px;
+  text-decoration: none;
+}
+.beastLink:hover { background: #f6e5bd }
 .gamesIntro { margin:0 0 26px; color:var(--ink2); font-size:.94rem; line-height:1.6;
   max-width:64ch }
 .gamesIntro em { font-style:normal; font-weight:600; color:var(--ink) }

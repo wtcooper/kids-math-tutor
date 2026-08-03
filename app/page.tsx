@@ -83,6 +83,9 @@ export default async function LandingPage() {
         <div className={styles.gamesHead}>
           <h2 className={styles.groupName}>Games</h2>
           <span className={styles.groupCount}>{GAMES.length} to play</span>
+          <Link href="/beasts" className={styles.beastLink}>
+            ✦ The Beast Book
+          </Link>
         </div>
         <p className={styles.gamesIntro}>
           Each one is built so the maths <em>is</em> the game — take the maths out and
