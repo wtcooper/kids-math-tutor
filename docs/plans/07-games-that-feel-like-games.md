@@ -1,6 +1,11 @@
 # Plan 07 — Games that feel like games
 
-> **Status:** proposal, for review. Nothing here is built. This is the answer to a fair
+> **Status:** ALL FIVE BUILT, 2026-08-03 — Rapids, Number Garden Defense, The Number
+> Depths (phase 1: one endless floor-generator with the localStorage save; server save,
+> shop and town are the remaining phases), Orbit, and the Beast Book, each with model
+> property tests and a walkthrough video, verified by scripted playthroughs. The set is
+> now sixteen games plus the Book. This document remains the design rationale.
+> Originally: proposal, for review. This is the answer to a fair
 > criticism of the current set: "a lot of these are split and cut and type numbers in —
 > it doesn't feel like much of a game to a kid." Plans 05/06 sharpened and dressed the
 > existing games; this plan proposes NEW games that are games first — things move, you
