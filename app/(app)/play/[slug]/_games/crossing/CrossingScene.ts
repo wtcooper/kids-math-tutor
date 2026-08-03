@@ -396,19 +396,23 @@ export function createCrossingScene(P: typeof Phaser, config: CrossingConfig) {
       c.add(g);
       c.setDepth(10);
 
-      // An idle breath so the frog is alive even while she thinks.
-      if (!this.calmMotion) {
-        this.tweens.add({
-          targets: c,
-          scaleX: 1.04,
-          scaleY: 0.97,
-          duration: 900,
-          yoyo: true,
-          repeat: -1,
-          ease: "Sine.easeInOut",
-        });
-      }
+      this.startIdleBreath(c);
       return c;
+    }
+
+    /** An idle breath so the frog is alive even while she thinks. Restarted whenever
+     *  the frog's tweens have to be killed (see newCrossing). */
+    private startIdleBreath(c: Phaser.GameObjects.Container) {
+      if (this.calmMotion) return;
+      this.tweens.add({
+        targets: c,
+        scaleX: 1.04,
+        scaleY: 0.97,
+        duration: 900,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+      });
     }
 
     /* ------------------------------------------------------------- board */
@@ -428,7 +432,15 @@ export function createCrossingScene(P: typeof Phaser, config: CrossingConfig) {
       this.frogStone = null;
       this.frogX = W / 2;
       this.landed = false;
+      // Kill anything still driving the frog — the far-bank celebration bounce outlives
+      // the 420ms deal delay, and used to pin the frog on the far bank for the whole
+      // next crossing. Then reset it fully and give it back its idle breath.
+      this.tweens.killTweensOf(this.frog);
+      this.frog.setAlpha(1).setScale(1).setAngle(0);
       this.frog.setPosition(this.frogX, BANK_BOTTOM_Y);
+      this.startIdleBreath(this.frog);
+      this.frogShadow.setAlpha(0.25).setScale(1);
+      this.frogShadow.setPosition(this.frogX, BANK_BOTTOM_Y + 12);
       this.askedAt = this.time.now;
       this.renderBanner();
       this.pushState();
