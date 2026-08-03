@@ -26,7 +26,7 @@ export const DEMOS: Readonly<Record<string, readonly string[]>> = {
   munchers: [
     "Read the rule first — nothing moves until you press Start.",
     "Tap a square next to yours to step onto it, then tap your own square to eat the number — but only if it fits the rule.",
-    "The Grumps are eating the right numbers too. A number you leave sitting is one they may take.",
+    "The Grumps eat the right numbers too — and if one catches you, you just pop back to the middle. Nothing is ever lost.",
   ],
   split: [
     "Slide under a rock and tap to shoot it.",
@@ -50,7 +50,7 @@ export const DEMOS: Readonly<Record<string, readonly string[]>> = {
   ],
   beam: [
     "Each machine wants a fraction of the one beam of light.",
-    "Choose the splitter setting — it has to be a number every machine's bottom number divides into.",
+    "Choose the splitter setting — a setting that cannot pay every machine in whole strands is simply refused, so try another.",
     "Feed each machine whole strands until it starts running. Every machine lit means the beam was shared exactly.",
   ],
   balance: [

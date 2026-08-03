@@ -15,6 +15,10 @@
 .btn:hover {
   background: #f6e5bd;
 }
+.btnPlay {
+  font-size: 0.7em;
+  margin-right: 2px;
+}
 
 .backdrop {
   position: fixed;
@@ -22,7 +26,7 @@
   z-index: 60;
   display: grid;
   place-items: center;
-  background: rgba(40, 33, 24, 0.55);
+  background: rgba(24, 20, 15, 0.72);
   padding: 18px;
 }
 
@@ -31,12 +35,14 @@
   border: 1px solid var(--line2);
   border-radius: 18px;
   box-shadow: var(--sh2);
-  padding: 14px 16px 14px;
-  width: min(760px, 96vw);
+  padding: 12px 14px;
+  width: min(820px, 96vw);
   animation: pop 0.2s ease-out;
 }
 
-.imgWrap {
+/* The screen: dark like a player, frames drift like footage. */
+.screen {
+  position: relative;
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid var(--line2);
@@ -47,44 +53,178 @@
   width: 100%;
   height: auto;
 }
+.imgLive {
+  animation: kenburns 6s ease-out forwards;
+}
+@keyframes kenburns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.05);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .imgLive {
+    animation: none;
+  }
+}
+
+/* The poster frame: one big friendly play button. */
+.cover {
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 6px;
+  justify-items: center;
+  background: rgba(16, 14, 10, 0.55);
+  color: #fff;
+  font: inherit;
+}
+.coverPlay {
+  display: grid;
+  place-items: center;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  background: var(--clay);
+  color: #fff8f2;
+  font-size: 1.7rem;
+  padding-left: 6px;
+  box-shadow: 0 6px 24px -6px rgba(0, 0, 0, 0.7);
+  transition: transform 0.15s;
+}
+.cover:hover .coverPlay {
+  transform: scale(1.08);
+}
+.coverTitle {
+  font-size: 1.15rem;
+  font-weight: 700;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+.coverSub {
+  font-size: 0.82rem;
+  opacity: 0.85;
+}
+
+/* End card: watch again or go play. */
+.endCard {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 10px;
+  justify-items: center;
+  background: rgba(16, 14, 10, 0.55);
+}
+.endGhost {
+  background: rgba(255, 252, 247, 0.92);
+}
+
+.skip {
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+.skip:hover {
+  background: rgba(0, 0, 0, 0.65);
+}
 
 .caption {
-  margin: 12px 2px 10px;
-  font-size: 1.02rem;
+  margin: 12px 4px 10px;
+  font-size: 1.08rem;
   line-height: 1.5;
   color: var(--ink);
-  min-height: 3em;
+  min-height: 3.1em;
+  animation: captionIn 0.35s ease-out;
 }
-.stepNo {
-  display: inline-block;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--gold-d);
-  background: var(--gold-s);
-  border-radius: 999px;
-  padding: 2px 9px;
-  margin-right: 9px;
-  vertical-align: 2px;
+@keyframes captionIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
+/* Player controls: play/pause, a segmented progress track, the frame count. */
 .controls {
   display: flex;
   align-items: center;
   gap: 12px;
 }
-.dots {
-  display: flex;
-  gap: 6px;
-  margin: 0 auto;
-}
-.dot,
-.dotOn {
-  width: 7px;
-  height: 7px;
+.playPause {
+  appearance: none;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background: var(--line2);
+  border: 1px solid var(--clay-d);
+  background: var(--clay);
+  color: #fff8f2;
+  flex: none;
 }
-.dotOn {
+.track {
+  display: flex;
+  gap: 5px;
+  flex: 1;
+}
+.seg {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+  overflow: hidden;
+}
+.seg > span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+}
+.segDone {
+  width: 100%;
   background: var(--gold-d);
+}
+.segTodo {
+  width: 0;
+}
+.segLive {
+  width: 100%;
+  background: var(--gold-d);
+  transform-origin: left;
+  animation-name: segFill;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+@keyframes segFill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.count {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--ink3);
+  flex: none;
 }
