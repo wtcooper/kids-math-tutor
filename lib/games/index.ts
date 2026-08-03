@@ -15,6 +15,7 @@ export type GameImpl =
   | "crossing"
   | "munchers"
   | "split"
+  | "orbit"
   | "enclosure"
   | "tiles"
   | "cut"
@@ -113,6 +114,18 @@ export const GAMES: readonly GameMeta[] = [
       "Factors and primes by sharing: every break is a division that comes out exact — 12 ÷ 3 = 4, so 12 is three 4s — down until only primes are left.",
     focus: "understanding",
     practises: "Division & primes — breaking a number into equal parts",
+  },
+  {
+    slug: "orbit",
+    impl: "orbit",
+    name: "Orbit",
+    topicId: "factors",
+    blurb:
+      "Split, at full speed: load a prime shell and fire — it only splits a rock it divides. No pausing, no menus.",
+    concept:
+      "Divisibility: does 3 go into 51? Firing is the question — a shell only splits a rock its prime divides, down to nothing but primes.",
+    focus: "fluency",
+    practises: "Division & primes — divisibility rules, at speed",
   },
   {
     slug: "enclosure",

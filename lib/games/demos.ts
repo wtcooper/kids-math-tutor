@@ -33,6 +33,11 @@ export const DEMOS: Readonly<Record<string, readonly string[]>> = {
     "Say how the rock shatters — into equal rocks. Every choice is a division that comes out exact.",
     "The pink crystals are primes: they cannot break. Clear the board down to nothing but primes.",
   ],
+  orbit: [
+    "Load a prime shell from the rack — tap it, or press 1 to 6.",
+    "Line up and fire. A shell only splits a rock its prime divides — 3 splits 51, and a wrong shell just glances off for free.",
+    "Every split pulls that prime out of the rock. Keep firing until nothing is left but primes.",
+  ],
   enclosure: [
     "The signboard is the job: fence off exactly this many squares.",
     "Walk the fence one post at a time — tap the next corner, or use the arrow keys.",
