@@ -128,7 +128,7 @@ export const GAMES: readonly GameMeta[] = [
     name: "Tiles",
     topicId: "mul",
     blurb:
-      "Cover a rectangle with hundreds, strips and squares. The pile you use is the partial products.",
+      "Cut a rectangle in two directions, then work out the area of each piece. The four pieces are the answer.",
     concept:
       "The distributive property. 23 × 14 = (20 + 3) × (10 + 4) = 200 + 80 + 30 + 12 — you work out each part yourself.",
     focus: "understanding",
