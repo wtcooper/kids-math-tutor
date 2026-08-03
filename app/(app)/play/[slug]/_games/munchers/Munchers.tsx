@@ -21,6 +21,7 @@ const HOW_TO: HowTo = {
   ],
   rules: [
     "The rule is written across the top. It changes every round.",
+    "Nothing moves until you press Start — read the rule first.",
     "The Grumps eat the right numbers too — leave one sitting and they will take it.",
     "Eating a wrong number costs nothing. It just wobbles and stays put.",
     "If a Grump catches you, you pop back to the middle. Nothing is lost.",
@@ -32,6 +33,8 @@ interface Live {
   yours: number;
   grumps: number;
   left: number;
+  /** The round is dealt but frozen until she presses Start. */
+  waiting: boolean;
 }
 
 export default function Munchers({
@@ -131,6 +134,25 @@ export default function Munchers({
         busRef={busRef}
         backgroundColor="#232019"
       />
+      {/* The round deals frozen behind this. She reads the rule at leisure; the
+          Grumps' clock only starts when she says so. */}
+      {live?.waiting && !result ? (
+        <div className={styles.startScrim}>
+          <div className={styles.startCard}>
+            <p className={styles.startLabel}>This round</p>
+            <p className={styles.startRule}>{live.rule}</p>
+            <button
+              type="button"
+              className="btn primary"
+              autoFocus
+              onClick={() => busRef.current?.send({ type: "next" })}
+            >
+              Start
+            </button>
+            <p className={styles.startNote}>Nothing moves until you do.</p>
+          </div>
+        </div>
+      ) : null}
       {result ? (
         <FactorRoundEnd
           topicId={topicId}

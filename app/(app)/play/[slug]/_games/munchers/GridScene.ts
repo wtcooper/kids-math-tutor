@@ -201,6 +201,13 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
     private eatenTargets: number[] = [];
     private grumpScore = 0;
     private graceUntil = 0;
+    /**
+     * True between a round being dealt and her pressing Start. Nothing moves and
+     * nothing can be eaten — by anyone — so the rule can be read at leisure. Without
+     * this, the Grumps were already stealing numbers while she was still reading what
+     * the round was asking for.
+     */
+    private waiting = false;
 
     constructor() {
       super("grid");
@@ -216,6 +223,7 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
           this.newRound();
         } else if (cmd.type === "pause") this.scene.pause();
         else if (cmd.type === "resume") this.scene.resume();
+        else if (cmd.type === "next") this.beginRound();
       });
 
       this.calmMotion =
@@ -343,10 +351,23 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
       const roamerCount = Math.min(3, Math.max(1, this.level - 1));
       for (let i = 0; i < roamerCount; i++) this.addRoamer();
 
+      // The round deals frozen. The host shows the rule and a Start button over the
+      // board; beginRound() is what actually lets anything move.
+      this.waiting = true;
       this.askedAt = this.time.now;
       this.graceUntil = this.time.now + GRACE_MS;
       // Zeroed here too: a slow first frame after page load banks a large delta, which
       // let several beats fire back to back and cost her numbers before she had moved.
+      this.beatAcc = 0;
+      this.pushState();
+    }
+
+    /** She has read the rule and pressed Start. The grace period runs from now. */
+    private beginRound() {
+      if (!this.waiting) return;
+      this.waiting = false;
+      this.askedAt = this.time.now;
+      this.graceUntil = this.time.now + GRACE_MS;
       this.beatAcc = 0;
       this.pushState();
     }
@@ -360,6 +381,7 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
           yours: this.eatenTargets.length,
           grumps: this.grumpScore,
           left: this.remainingTargets(),
+          waiting: this.waiting,
         },
       });
     }
@@ -421,6 +443,7 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
     }
 
     private onTap(p: Phaser.Input.Pointer) {
+      if (this.waiting) return;
       const c = Math.floor((p.worldX - GRID_X) / CELL_W);
       const r = Math.floor((p.worldY - GRID_Y) / CELL_H);
       if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return;
@@ -435,12 +458,14 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
     }
 
     private step(dc: number, dr: number) {
+      if (this.waiting) return;
       this.col = Math.min(COLS - 1, Math.max(0, this.col + dc));
       this.row = Math.min(ROWS - 1, Math.max(0, this.row + dr));
       this.syncPlayer(true);
     }
 
     private munch() {
+      if (this.waiting) return;
       const cell = this.cellAt(this.col, this.row);
       if (!cell || cell.eaten) return;
 
@@ -717,6 +742,7 @@ export function createGridScene(P: typeof Phaser, config: { level: number }) {
     }
 
     update(_t: number, delta: number) {
+      if (this.waiting) return;
       this.beatAcc += delta;
       if (this.beatAcc >= BEAT) {
         this.beatAcc = 0;
